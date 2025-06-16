@@ -88,3 +88,9 @@ CREATE TABLE "Categories" (
 INSERT INTO Categories ('label') VALUES ('News');
 INSERT INTO Tags ('label') VALUES ('JavaScript');
 INSERT INTO Reactions ('label', 'image_url') VALUES ('happy', 'https://pngtree.com/so/happy');
+
+INSERT INTO Users (
+  "first_name", "last_name", "email", "bio", "username", "password", "profile_image_url", "created_on", "active"
+) VALUES (
+  'John', 'Doe', 'john.doe@email.com', 'Sample bio', 'johndoe', 'password123', 'http://example.com/image.jpg', '2025-06-16', 1
+);
