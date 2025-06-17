@@ -10,8 +10,13 @@ def login_user(user):
         user (dict): Contains the username and password of the user trying to login
 
     Returns:
-        dict: If the user was found will return valid boolean of True and the user's id as the token
-              If the user was not found will return valid boolean False
+        dict: {
+            "valid": True,
+            "token": "rare_token_user_<id>"
+        }
+        or {
+            "valid": False
+        }
     """
     with sqlite3.connect("./db.sqlite3") as conn:
         conn.row_factory = sqlite3.Row
@@ -29,7 +34,8 @@ def login_user(user):
         user_from_db = db_cursor.fetchone()
 
         if user_from_db is not None:
-            return {"valid": True, "token": user_from_db["id"]}
+            user_id = user_from_db["id"]
+            return {"valid": True, "token": f"rare_token_user_{user_id}"}
         else:
             return {"valid": False}
 
@@ -42,8 +48,12 @@ def create_user(user):
         user (dict): The dictionary passed to the register POST request
 
     Returns:
-        dict: If successful, returns {'id': new_user_id}
-              If duplicate, returns {'error': '...'}
+        dict: {
+            "id": <new_user_id>
+        }
+        or {
+            "error": "..."
+        }
     """
     with sqlite3.connect("./db.sqlite3") as conn:
         conn.row_factory = sqlite3.Row
@@ -64,8 +74,14 @@ def create_user(user):
         db_cursor.execute(
             """
             INSERT INTO Users (
-                first_name, last_name, username, email,
-                password, bio, created_on, active
+                first_name,
+                last_name,
+                username,
+                email,
+                password,
+                bio,
+                created_on,
+                active
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, 1)
             """,
