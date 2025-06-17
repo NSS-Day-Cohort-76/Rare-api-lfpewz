@@ -3,6 +3,7 @@ import json
 from models.user import create_user, login_user
 
 
+
 class RequestHandler(BaseHTTPRequestHandler):
 
     def do_OPTIONS(self):
@@ -23,6 +24,8 @@ class RequestHandler(BaseHTTPRequestHandler):
             self._handle_register(body)
         elif self.path == "/login":
             self._handle_login(body)
+        elif self.path == "/create-post":
+            self._handle_create_post(body)
         else:
             self._send_response(404, {"error": "Endpoint not found"})
 
@@ -49,15 +52,3 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Origin", "*")
         self.end_headers()
         self.wfile.write(json.dumps(response_obj).encode())
-
-
-def main():
-    host = ""
-    port = 8088
-    server = HTTPServer((host, port), RequestHandler)
-    print(f"🐍 Rare API Server running on http://localhost:{port}")
-    server.serve_forever()
-
-
-if __name__ == "__main__":
-    main()
