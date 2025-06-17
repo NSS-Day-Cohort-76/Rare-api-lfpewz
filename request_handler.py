@@ -1,6 +1,7 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import json
 from models.user import create_user, login_user
+from views.post import handle_create_post
 
 
 
@@ -12,7 +13,8 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.send_header(
             "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS"
         )
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
         self.end_headers()
 
     def do_POST(self):
@@ -24,10 +26,22 @@ class RequestHandler(BaseHTTPRequestHandler):
             self._handle_register(body)
         elif self.path == "/login":
             self._handle_login(body)
-        elif self.path == "/create-post":
-            self._handle_create_post(body)
-        else:
-            self._send_response(404, {"error": "Endpoint not found"})
+        elif self.path == "/posts":
+            # 🔐 Grab the token from the headers: "Token rare_token_user_6"
+            auth_header = self.headers.get("Authorization")
+            if auth_header and auth_header.startswith("Token rare_token_user_"):
+                try:
+                    user_id = int(auth_header.split("_")[-1])
+                    body["user_id"] = user_id
+                except ValueError:
+                    return self._send_response(400, {"error": "Invalid token format"})
+            else:
+                return self._send_response(
+                    401, {"error": "Authorization header missing or malformed"}
+                )
+
+            status, result = handle_create_post(body)
+            self._send_response(status, result)
 
     # 🔐 Register handler with duplicate username/email check
     def _handle_register(self, body):
@@ -50,5 +64,6 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.send_response(status_code)
         self.send_header("Content-Type", "application/json")
         self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
         self.end_headers()
         self.wfile.write(json.dumps(response_obj).encode())
