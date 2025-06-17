@@ -1,6 +1,6 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import json
-import sqlite3
+from models.user import create_user, login_user
 
 
 class RequestHandler(BaseHTTPRequestHandler):
@@ -15,89 +15,40 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_POST(self):
-        if self.path == "/register":
-            self.handle_register()
-        elif self.path == "/login":
-            self.handle_login()
-        else:
-            self.send_error(404, "Not Found")
-
-    def handle_register(self):
         content_length = int(self.headers["Content-Length"])
         post_data = self.rfile.read(content_length)
-        new_user = json.loads(post_data)
+        body = json.loads(post_data)
 
-        with sqlite3.connect("db.sqlite3") as conn:
-            db_cursor = conn.cursor()
+        if self.path == "/register":
+            self._handle_register(body)
+        elif self.path == "/login":
+            self._handle_login(body)
+        else:
+            self._send_response(404, {"error": "Endpoint not found"})
 
-            db_cursor.execute(
-                """
-                INSERT INTO Users (
-                    first_name, last_name, email, bio,
-                    username, password, profile_image_url,
-                    created_on, active
-                )
-                VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), 1)
-            """,
-                (
-                    new_user["first_name"],
-                    new_user["last_name"],
-                    new_user["email"],
-                    new_user.get("bio", ""),
-                    new_user["username"],
-                    new_user["password"],
-                    new_user.get("profile_image_url", ""),
-                ),
+    # 🔐 Register handler with duplicate username/email check
+    def _handle_register(self, body):
+        result = create_user(body)
+
+        if "error" in result:
+            self._send_response(400, {"error": result["error"]})
+        else:
+            self._send_response(
+                201, {"valid": True, "token": f"rare_token_user_{result['id']}"}
             )
 
-            user_id = db_cursor.lastrowid
+    # 🔐 Login handler
+    def _handle_login(self, body):
+        result = login_user(body)
+        self._send_response(200, result)
 
-        self.send_response(201)
+    # 🔁 Shared response helper
+    def _send_response(self, status_code, response_obj):
+        self.send_response(status_code)
         self.send_header("Content-Type", "application/json")
         self.send_header("Access-Control-Allow-Origin", "*")
         self.end_headers()
-
-        # ✅ This structure matches frontend expectations
-        response = {"valid": True, "token": f"rare_token_user_{user_id}"}
-        self.wfile.write(json.dumps(response).encode())
-
-    def handle_login(self):
-        content_length = int(self.headers["Content-Length"])
-        post_data = self.rfile.read(content_length)
-        credentials = json.loads(post_data)
-
-        if "username" not in credentials or "password" not in credentials:
-            self.send_error(400, "Missing username or password")
-            return
-
-        with sqlite3.connect("db.sqlite3") as conn:
-            db_cursor = conn.cursor()
-            db_cursor.execute(
-                """
-                SELECT id FROM Users
-                WHERE username = ? AND password = ?
-            """,
-                (credentials["username"], credentials["password"]),
-            )
-            user = db_cursor.fetchone()
-
-        if user:
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self.send_header("Access-Control-Allow-Origin", "*")
-            self.end_headers()
-
-            # ✅ Send token + valid flag so frontend works
-            response = {"valid": True, "token": f"rare_token_user_{user[0]}"}
-            self.wfile.write(json.dumps(response).encode())
-        else:
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self.send_header("Access-Control-Allow-Origin", "*")
-            self.end_headers()
-
-            response = {"valid": False}
-            self.wfile.write(json.dumps(response).encode())
+        self.wfile.write(json.dumps(response_obj).encode())
 
 
 def main():
