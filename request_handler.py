@@ -37,7 +37,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                     username, password, profile_image_url,
                     created_on, active
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, date('now'), 1)
+                VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), 1)
             """,
                 (
                     new_user["first_name"],
