@@ -28,3 +28,15 @@ def create_tag(tag):
         )
         new_tag_id = db_cursor.lastrowid
         return {"id": new_tag_id}
+
+
+def get_tags():
+    with sqlite3.connect("./db.sqlite3") as conn:
+        conn.row_factory = sqlite3.Row
+        db_cursor = conn.cursor()
+        db_cursor.execute("SELECT id, label FROM Tags")
+        tags = []
+        dataset = db_cursor.fetchall()
+        for row in dataset:
+            tags.append({"id": row["id"], "label": row["label"]})
+        return tags

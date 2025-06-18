@@ -2,7 +2,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 import json
 from models.user import create_user, login_user
 from views.post import handle_create_post, handle_get_post
-from views.tagsView import handle_create_tag
+from views.tagsView import handle_create_tag, handle_get_tags
 
 
 class RequestHandler(BaseHTTPRequestHandler):
@@ -42,7 +42,7 @@ class RequestHandler(BaseHTTPRequestHandler):
 
             status, result = handle_create_post(body)
             self._send_response(status, result)
-        elif self.path == "/tags":
+        elif self.path == "/tags" or self.path == "/tags/":
             status, result = handle_create_tag(body)
             self._send_response(status, result)
 
@@ -60,6 +60,9 @@ class RequestHandler(BaseHTTPRequestHandler):
 
             except ValueError:
                 self._send_response(400, {"error": "Invalid post ID"})
+        elif self.path.rstrip("/") == "/tags":
+            status, result = handle_get_tags()
+            self._send_response(status, result)
         else:
             self._send_response(404, {"error": "Route not handled"})
 

@@ -1,4 +1,5 @@
 from models.tags import create_tag
+from models.tags import get_tags
 
 
 def handle_create_tag(body):
@@ -17,3 +18,8 @@ def handle_create_tag(body):
     if "error" in result:
         return (400, result)
     return (201, result)
+
+
+def handle_get_tags():
+    tags = get_tags()
+    return (200, tags)
