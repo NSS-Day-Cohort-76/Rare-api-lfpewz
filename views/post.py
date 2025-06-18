@@ -19,6 +19,10 @@ def handle_create_post(body):
     return (201, result)
 
 
+def handle_get_all_posts():
+    posts = get_all_posts()
+    return (200, posts)
+
 def handle_get_post(post_id):
     with sqlite3.connect("./db.sqlite3") as conn:
         conn.row_factory = sqlite3.Row
@@ -56,14 +60,6 @@ def handle_get_post(post_id):
         else:
             return None
 
-
-# def handle_get_all_posts(self):
-#     posts_json = get_all_posts()
-#     self._send_response(200, posts_json)
-
-def handle_get_all_posts():
-    posts = get_all_posts()
-    return (200, posts)
 
 def handle_update_post(post_id, updated_data):
     with sqlite3.connect("./db.sqlite3") as conn:

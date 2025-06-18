@@ -3,8 +3,7 @@ from enum import Enum
 import json
 from models.user import create_user, login_user
 from views.tagsView import handle_create_tag, handle_get_tags
-from views.post import handle_create_post, handle_get_post, handle_update_post
-, handle_get_all_posts
+from views.post import handle_create_post, handle_get_post, handle_update_post, handle_get_all_posts
 
 
 
