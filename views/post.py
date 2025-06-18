@@ -1,4 +1,4 @@
-from models.post import create_post
+from models.post import create_post, get_all_posts
 import sqlite3
 
 
@@ -18,6 +18,10 @@ def handle_create_post(body):
     # ✅ Send back the new post's ID with status 201 (Created)
     return (201, result)
 
+
+def handle_get_all_posts():
+    posts = get_all_posts()
+    return (200, posts)
 
 def handle_get_post(post_id):
     with sqlite3.connect("./db.sqlite3") as conn:

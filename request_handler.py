@@ -1,8 +1,9 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from enum import Enum
 import json
 from models.user import create_user, login_user
 from views.tagsView import handle_create_tag, handle_get_tags
-from views.post import handle_create_post, handle_get_post, handle_update_post
+from views.post import handle_create_post, handle_get_post, handle_update_post, handle_get_all_posts
 
 
 
@@ -49,6 +50,7 @@ class RequestHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         print("🔥 GET hit:", self.path)  # debug print
+
         if self.path.startswith("/posts/"):
             try:
                 post_id = int(self.path.split("/")[-1])
@@ -61,11 +63,16 @@ class RequestHandler(BaseHTTPRequestHandler):
 
             except ValueError:
                 self._send_response(400, {"error": "Invalid post ID"})
+        elif self.path.rstrip("/") == "/posts":
+            status, result = handle_get_all_posts()
+            self._send_response(status, result)
         elif self.path.rstrip("/") == "/tags":
             status, result = handle_get_tags()
             self._send_response(status, result)
         else:
             self._send_response(404, {"error": "Route not handled"})
+
+
 
     # 🔐 Register handler with duplicate username/email check
     def _handle_register(self, body):
