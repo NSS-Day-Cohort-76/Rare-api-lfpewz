@@ -1,7 +1,7 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import json
 from models.user import create_user, login_user
-from views.post import handle_create_post
+from views.post import handle_create_post, handle_get_post
 
 
 class RequestHandler(BaseHTTPRequestHandler):
@@ -66,6 +66,23 @@ class RequestHandler(BaseHTTPRequestHandler):
 
             status, result = handle_create_post(body)
             self._send_response(status, result)
+
+    def do_GET(self):
+        print("🔥 GET hit:", self.path)  # debug print
+        if self.path.startswith("/posts/"):
+            try:
+                post_id = int(self.path.split("/")[-1])
+                post = handle_get_post(post_id)
+
+                if post:
+                    self._send_response(200, post)
+                else:
+                    self._send_response(404, {"error": "Post not found"})
+
+            except ValueError:
+                self._send_response(400, {"error": "Invalid post ID"})
+        else:
+            self._send_response(404, {"error": "Route not handled"})
 
     # 🔐 Register handler with duplicate username/email check
     def _handle_register(self, body):
