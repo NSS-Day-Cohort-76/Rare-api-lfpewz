@@ -10,12 +10,14 @@ def create_post(post):
         post (dict): The post data from the frontend.
 
     Returns:
-        dict: Contains the ID of the new post like { "id": 3 }
+        dict: The newly created post as a dictionary
     """
+    publication_date = datetime.now().isoformat()
+    image_url = post.get("image_url", "")  # Optional
+
     with sqlite3.connect("./db.sqlite3") as conn:
         db_cursor = conn.cursor()
 
-        # 👇 Save the post to the Posts table
         db_cursor.execute(
             """
             INSERT INTO Posts (
@@ -30,17 +32,25 @@ def create_post(post):
             VALUES (?, ?, ?, ?, ?, ?, 1)
         """,
             (
-                post["user_id"],  # 👈 Who made the post
-                post["category_id"],  # 👈 What category it’s in
-                post["title"],  # 👈 Title from the form
-                post["content"],  # 👈 Main body text
-                post.get("image_url", ""),  # 👈 Optional image URL
-                datetime.now(),  # 👈 Set to right now
+                post["user_id"],
+                post["category_id"],
+                post["title"],
+                post["content"],
+                image_url,
+                publication_date,
             ),
         )
 
-        # ✅ Get the ID of the new post
         new_post_id = db_cursor.lastrowid
 
-        # 🎁 Give back the ID to the frontend
-        return {"id": new_post_id}
+    # Return the full post object
+    return {
+        "id": new_post_id,
+        "user_id": post["user_id"],
+        "category_id": post["category_id"],
+        "title": post["title"],
+        "content": post["content"],
+        "image_url": image_url,
+        "publication_date": publication_date,
+        "approved": True,
+    }
