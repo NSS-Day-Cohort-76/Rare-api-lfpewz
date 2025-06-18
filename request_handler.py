@@ -2,6 +2,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 import json
 from models.user import create_user, login_user
 from views.post import handle_create_post
+from views.tagsView import handle_create_tag
 
 
 class RequestHandler(BaseHTTPRequestHandler):
@@ -40,6 +41,9 @@ class RequestHandler(BaseHTTPRequestHandler):
                 )
 
             status, result = handle_create_post(body)
+            self._send_response(status, result)
+        elif self.path == "/tags":
+            status, result = handle_create_tag(body)
             self._send_response(status, result)
 
     # 🔐 Register handler with duplicate username/email check
