@@ -61,7 +61,8 @@ def get_all_posts():
     with sqlite3.connect("./db.sqlite3") as conn:
         conn.row_factory = sqlite3.Row
         db_cursor = conn.cursor()
-        db_cursor.execute("""
+        db_cursor.execute(
+            """
             SELECT
                 p.id,
                 p.title,
@@ -73,21 +74,31 @@ def get_all_posts():
             FROM Posts p
             JOIN Users u ON p.user_id = u.id
             JOIN Categories c ON p.category_id = c.id
-        """)
+        """
+        )
 
         posts = []
         dataset = db_cursor.fetchall()
         for row in dataset:
-            posts.append({
-                "id": row["id"],
-                "title": row["title"],
-                "content": row["content"],
-                "image_url": row["image_url"],
-                "publication_date": row["publication_date"],
-                "user_id": row["user_id"],
-                "author": row["username"],
-            })
+            posts.append(
+                {
+                    "id": row["id"],
+                    "title": row["title"],
+                    "content": row["content"],
+                    "image_url": row["image_url"],
+                    "publication_date": row["publication_date"],
+                    "user_id": row["user_id"],
+                    "author": row["username"],
+                }
+            )
         return posts
+
+
+def delete_post(post_id):
+    with sqlite3.connect("./db.sqlite3") as conn:
+        db_cursor = conn.cursor()
+        db_cursor.execute("DELETE FROM Posts WHERE id = ?", (post_id,))
+
 
 # def get_all_posts():
 #     with sqlite3.connect("./db.sqlite3") as conn:
