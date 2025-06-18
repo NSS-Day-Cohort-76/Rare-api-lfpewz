@@ -1,4 +1,4 @@
-from models.post import create_post
+from models.post import create_post, get_all_posts
 import sqlite3
 
 
@@ -55,3 +55,12 @@ def handle_get_post(post_id):
             }
         else:
             return None
+
+
+# def handle_get_all_posts(self):
+#     posts_json = get_all_posts()
+#     self._send_response(200, posts_json)
+
+def handle_get_all_posts():
+    posts = get_all_posts()
+    return (200, posts)

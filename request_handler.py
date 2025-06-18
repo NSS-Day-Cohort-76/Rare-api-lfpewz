@@ -1,35 +1,12 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from enum import Enum
 import json
 from models.user import create_user, login_user
-from views.post import handle_create_post, handle_get_post
+from views.post import handle_create_post, handle_get_post, handle_get_all_posts
+
 
 
 class RequestHandler(BaseHTTPRequestHandler):
-
-    # def do_GET(self):
-    #     """Handle GET requests from a client"""
-
-    #     response_body = ""
-    #     url = self.parse_url(self.path)
-
-    #     if url["requested_resource"] == "metals":
-    #         if url["pk"] != 0:
-    #             response_body = retrieve_metal(url["pk"])
-    #             return self.response(response_body, status.HTTP_200_SUCCESS.value)
-
-    #         response_body = list_metals()
-    #         return self.response(response_body, status.HTTP_200_SUCCESS.value)
-
-    #     elif url["requested_resource"] == "orders":
-    #         if url["pk"] != 0:
-    #             response_body = get_single_order(url["pk"])
-    #             return self.response(response_body, status.HTTP_200_SUCCESS.value)
-
-    #         response_body = list_orders(url)
-    #         return self.response(response_body, status.HTTP_200_SUCCESS.value)
-
-    #     else:
-    #         return self.response("", status.HTTP_404_CLIENT_ERROR_RESOURCE_NOT_FOUND.value)
 
     def do_OPTIONS(self):
         self.send_response(200)
@@ -67,8 +44,10 @@ class RequestHandler(BaseHTTPRequestHandler):
             status, result = handle_create_post(body)
             self._send_response(status, result)
 
+
     def do_GET(self):
         print("🔥 GET hit:", self.path)  # debug print
+
         if self.path.startswith("/posts/"):
             try:
                 post_id = int(self.path.split("/")[-1])
@@ -81,8 +60,13 @@ class RequestHandler(BaseHTTPRequestHandler):
 
             except ValueError:
                 self._send_response(400, {"error": "Invalid post ID"})
+        elif self.path.rstrip("/") == "/posts":
+            status, result = handle_get_all_posts()
+            self._send_response(status, result)
         else:
             self._send_response(404, {"error": "Route not handled"})
+
+
 
     # 🔐 Register handler with duplicate username/email check
     def _handle_register(self, body):
