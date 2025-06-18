@@ -1,7 +1,7 @@
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler
 import json
 from models.user import create_user, login_user
-from views.post import handle_create_post, handle_get_post
+from views.post import handle_create_post, handle_get_post, handle_update_post
 from views.tagsView import handle_create_tag, handle_get_tags
 
 
@@ -77,6 +77,19 @@ class RequestHandler(BaseHTTPRequestHandler):
                 201, {"valid": True, "token": f"rare_token_user_{result['id']}"}
             )
 
+    def do_PUT(self):
+        content_length = int(self.headers["Content-Length"])
+        body = self.rfile.read(content_length)
+        data = json.loads(body)
+
+        if self.path.startswith("/posts/"):
+            try:
+                post_id = int(self.path.split("/")[-1])
+                handle_update_post(post_id, data)
+                self._send_response(204, {})
+            except ValueError:
+                self._send_response(400, {"error": "Invalid post ID"})
+
     # 🔐 Login handler
     def _handle_login(self, body):
         result = login_user(body)
@@ -90,15 +103,3 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
         self.end_headers()
         self.wfile.write(json.dumps(response_obj).encode())
-
-
-def main():
-    host = ""
-    port = 8088
-    server = HTTPServer((host, port), RequestHandler)
-    print(f"🐍 Rare API Server running on http://localhost:{port}")
-    server.serve_forever()
-
-
-if __name__ == "__main__":
-    main()
