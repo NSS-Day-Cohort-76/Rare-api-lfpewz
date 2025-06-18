@@ -64,3 +64,24 @@ def handle_get_post(post_id):
 def handle_get_all_posts():
     posts = get_all_posts()
     return (200, posts)
+
+def handle_update_post(post_id, updated_data):
+    with sqlite3.connect("./db.sqlite3") as conn:
+        db_cursor = conn.cursor()
+
+        db_cursor.execute(
+            """
+            UPDATE Posts
+            SET title = ?, content = ?, category_id = ?, image_url = ?
+            WHERE id = ?
+        """,
+            (
+                updated_data["title"],
+                updated_data["content"],
+                updated_data["category_id"],
+                updated_data.get("image_url", ""),
+                post_id,
+            ),
+        )
+
+    return True

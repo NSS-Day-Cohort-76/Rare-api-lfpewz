@@ -2,7 +2,9 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from enum import Enum
 import json
 from models.user import create_user, login_user
-from views.post import handle_create_post, handle_get_post, handle_get_all_posts
+from views.tagsView import handle_create_tag, handle_get_tags
+from views.post import handle_create_post, handle_get_post, handle_update_post
+, handle_get_all_posts
 
 
 
@@ -43,7 +45,9 @@ class RequestHandler(BaseHTTPRequestHandler):
 
             status, result = handle_create_post(body)
             self._send_response(status, result)
-
+        elif self.path == "/tags" or self.path == "/tags/":
+            status, result = handle_create_tag(body)
+            self._send_response(status, result)
 
     def do_GET(self):
         print("🔥 GET hit:", self.path)  # debug print
@@ -63,6 +67,9 @@ class RequestHandler(BaseHTTPRequestHandler):
         elif self.path.rstrip("/") == "/posts":
             status, result = handle_get_all_posts()
             self._send_response(status, result)
+        elif self.path.rstrip("/") == "/tags":
+            status, result = handle_get_tags()
+            self._send_response(status, result)
         else:
             self._send_response(404, {"error": "Route not handled"})
 
@@ -78,6 +85,19 @@ class RequestHandler(BaseHTTPRequestHandler):
             self._send_response(
                 201, {"valid": True, "token": f"rare_token_user_{result['id']}"}
             )
+
+    def do_PUT(self):
+        content_length = int(self.headers["Content-Length"])
+        body = self.rfile.read(content_length)
+        data = json.loads(body)
+
+        if self.path.startswith("/posts/"):
+            try:
+                post_id = int(self.path.split("/")[-1])
+                handle_update_post(post_id, data)
+                self._send_response(204, {})
+            except ValueError:
+                self._send_response(400, {"error": "Invalid post ID"})
 
     # 🔐 Login handler
     def _handle_login(self, body):
