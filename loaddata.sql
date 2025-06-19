@@ -11,6 +11,10 @@ CREATE TABLE "Users" (
   "active" bit
 );
 
+ALTER TABLE Users ADD COLUMN isStaff BOOLEAN DEFAULT 1;
+
+UPDATE Users SET isStaff = 1;
+
 CREATE TABLE "DemotionQueue" (
   "action" varchar,
   "admin_id" INTEGER,
@@ -84,6 +88,8 @@ CREATE TABLE "Categories" (
   "id" INTEGER PRIMARY KEY AUTOINCREMENT,
   "label" varchar
 );
+
+ALTER TABLE Comments ADD COLUMN created_on DATE;
 
 INSERT INTO Categories ('label') VALUES ('News');
 INSERT INTO Tags ('label') VALUES ('JavaScript');
