@@ -50,23 +50,18 @@ class RequestHandler(BaseHTTPRequestHandler):
         elif self.path == "/login":
             self._handle_login(body)
         elif self.path == "/posts":
-            # 🔐 Grab the token from the headers: "Token rare_token_user_6"
             auth_header = self.headers.get("Authorization")
-            if auth_header and auth_header.startswith("Token rare_token_user_"):
-                try:
-                    user_id = int(auth_header.split("_")[-1])
-                    body["user_id"] = user_id
-                except ValueError:
-                    return self._send_response(400, {"error": "Invalid token format"})
-            else:
+            if not (auth_header and auth_header.startswith("User ")):
                 return self._send_response(
                     401, {"error": "Authorization header missing or malformed"}
                 )
+            try:
+                user_id = int(auth_header.split(" ")[1])
+                body["user_id"] = user_id
+            except (IndexError, ValueError):
+                return self._send_response(400, {"error": "Invalid user ID format"})
 
             status, result = handle_create_post(body)
-            self._send_response(status, result)
-        elif self.path == "/tags" or self.path == "/tags/":
-            status, result = handle_create_tag(body)
             self._send_response(status, result)
 
     def do_GET(self):
@@ -165,6 +160,24 @@ class RequestHandler(BaseHTTPRequestHandler):
     def _handle_login(self, body):
         result = login_user(body)
         self._send_response(200, result)
+
+    # def _handle_login(self, body):
+    #     try:
+    #         result = login_user(body)
+    #         if "error" in result:
+    #             self._send_response(401, {"valid": False, "error": result["error"]})
+    #         else:
+    #             self._send_response(
+    #                 200,
+    #                 {
+    #                     "valid": True,
+    #                     "user_id": result["id"],
+    #                     "isStaff": result.get("isStaff", 1),
+    #                 },
+    #             )
+    #     except Exception as ex:
+    #         print("Error in _handle_login:", ex)
+    #         self._send_response(500, {"error": "Internal server error"})
 
     # 🔁 Shared response helper
     def _send_response(self, status_code, response_obj):
