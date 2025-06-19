@@ -1,8 +1,12 @@
-from http.server import BaseHTTPRequestHandler, HTTPServer
-from enum import Enum
+from http.server import BaseHTTPRequestHandler
 import json
 from models.user import create_user, login_user
-from views.tagsView import handle_create_tag, handle_get_tags
+from views.tagsView import (
+    handle_create_tag,
+    handle_get_tags,
+    handle_delete_tag,
+    handle_update_tag,
+)
 from views.post import (
     handle_create_post,
     handle_get_post,
@@ -90,6 +94,15 @@ class RequestHandler(BaseHTTPRequestHandler):
             self._send_response(404, {"error": "Route not handled"})
 
     def do_DELETE(self):
+        if self.path.startswith("/tags/"):
+            try:
+                tag_id = int(self.path.split("/")[-1])
+                status, result = handle_delete_tag(tag_id)
+                self._send_response(status, result)
+            except ValueError:
+                self._send_response(400, {"error": "Invalid tag ID"})
+        else:
+            self._send_response(404, {"error": "Route not handled"})
         url = self.parse_url(self.path)
         resource = url["resource"]
         pk = url.get("id", None)
@@ -122,9 +135,9 @@ class RequestHandler(BaseHTTPRequestHandler):
                 {
                     "valid": True,
                     "user_id": result["id"],
-                    "isStaff": result.get("isStaff", 1)  # Adjust key as needed
-                }
-        )
+                    "isStaff": result.get("isStaff", 1),  # Adjust key as needed
+                },
+            )
 
     def do_PUT(self):
         content_length = int(self.headers["Content-Length"])
@@ -138,6 +151,15 @@ class RequestHandler(BaseHTTPRequestHandler):
                 self._send_response(204, {})
             except ValueError:
                 self._send_response(400, {"error": "Invalid post ID"})
+        if self.path.startswith("/tags/"):
+            try:
+                tag_id = int(self.path.split("/")[-1])
+                status, result = handle_update_tag(tag_id, data)
+                self._send_response(status, result)
+            except ValueError:
+                self._send_response(400, {"error": "Invalid tag ID"})
+        else:
+            self._send_response(404, {"error": "Route not handled"})
 
     # 🔐 Login handler
     def _handle_login(self, body):
