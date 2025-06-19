@@ -166,6 +166,24 @@ class RequestHandler(BaseHTTPRequestHandler):
         result = login_user(body)
         self._send_response(200, result)
 
+    # def _handle_login(self, body):
+    #     try:
+    #         result = login_user(body)
+    #         if "error" in result:
+    #             self._send_response(401, {"valid": False, "error": result["error"]})
+    #         else:
+    #             self._send_response(
+    #                 200,
+    #                 {
+    #                     "valid": True,
+    #                     "user_id": result["id"],
+    #                     "isStaff": result.get("isStaff", 1),
+    #                 },
+    #             )
+    #     except Exception as ex:
+    #         print("Error in _handle_login:", ex)
+    #         self._send_response(500, {"error": "Internal server error"})
+
     # 🔁 Shared response helper
     def _send_response(self, status_code, response_obj):
         self.send_response(status_code)

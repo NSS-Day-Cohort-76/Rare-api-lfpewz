@@ -24,22 +24,21 @@ def login_user(user):
 
         db_cursor.execute(
             """
-            SELECT id, username, isStaff
+            SELECT id, username
             FROM Users
             WHERE username = ? AND password = ?
             """,
-            (user["username"], user["password"], user["isStaff"]),
+            (user["username"], user["password"]),
         )
 
         user_from_db = db_cursor.fetchone()
 
         if user_from_db is not None:
             user_id = user_from_db["id"]
-            isStaff = user_from_db["isStaff"]  # Adjust this key as needed
-            return {"valid": True, "user_id": user_id, "isStaff": 1}
+            # isStaff = user_from_db["isStaff"]  # Adjust this key as needed
+            return {"valid": True, "user_id": user_id}
         else:
             return {"valid": False}
-
 
         # if user_from_db is not None:
         #     user_id = user_from_db["id"]
@@ -90,7 +89,7 @@ def create_user(user):
                 password,
                 bio,
                 created_on,
-                active
+                active,
                 isStaff
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, 1, 1)
