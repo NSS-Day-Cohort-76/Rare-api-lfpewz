@@ -12,10 +12,23 @@ from views.post import (
     handle_get_post,
     handle_update_post,
     handle_get_all_posts,
+    handle_delete_post,
 )
 
 
 class RequestHandler(BaseHTTPRequestHandler):
+
+    def parse_url(self, path):
+        parts = path.strip("/").split("/")
+        result = {"resource": parts[0]}
+
+        if len(parts) > 1:
+            try:
+                result["id"] = int(parts[1])
+            except ValueError:
+                result["id"] = None
+
+        return result
 
     def do_OPTIONS(self):
         self.send_response(200)
@@ -90,8 +103,27 @@ class RequestHandler(BaseHTTPRequestHandler):
                 self._send_response(400, {"error": "Invalid tag ID"})
         else:
             self._send_response(404, {"error": "Route not handled"})
+        url = self.parse_url(self.path)
+        resource = url["resource"]
+        pk = url.get("id", None)
 
-    # 🔐 Register handler with duplicate username/email check
+        if resource == "posts" and pk is not None:
+            status, _ = handle_delete_post(pk)
+            self._send_response(status, {})  # Use your unified response function
+        else:
+            self._send_response(404, {"error": "Post not found"})
+
+    # # 🔐 Register handler with duplicate username/email check
+    # def _handle_register(self, body):
+    #     result = create_user(body)
+
+    #     if "error" in result:
+    #         self._send_response(400, {"error": result["error"]})
+    #     else:
+    #         self._send_response(
+    #             201, {"valid": True, "token": f"rare_token_user_{result['id']}"}
+    #         )
+
     def _handle_register(self, body):
         result = create_user(body)
 
@@ -100,8 +132,11 @@ class RequestHandler(BaseHTTPRequestHandler):
         else:
             self._send_response(
                 201,
-                {"valid": True, "token": result[{"id", "email"}]},
-                # 201, {"valid": True, "token": f"rare_token_user_{result['id']}"}
+                {
+                    "valid": True,
+                    "user_id": result["id"],
+                    "isStaff": result.get("isStaff", 1),  # Adjust key as needed
+                },
             )
 
     def do_PUT(self):
