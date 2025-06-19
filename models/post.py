@@ -70,7 +70,11 @@ def get_all_posts():
                 p.image_url,
                 p.publication_date,
                 p.user_id,
-                u.username
+                u.username,
+                u.first_name AS user_first_name,
+                u.last_name AS user_last_name,
+                c.id AS category_id,
+                c.label AS category_label
             FROM Posts p
             JOIN Users u ON p.user_id = u.id
             JOIN Categories c ON p.category_id = c.id
@@ -80,17 +84,31 @@ def get_all_posts():
         posts = []
         dataset = db_cursor.fetchall()
         for row in dataset:
-            posts.append(
-                {
-                    "id": row["id"],
-                    "title": row["title"],
-                    "content": row["content"],
-                    "image_url": row["image_url"],
-                    "publication_date": row["publication_date"],
-                    "user_id": row["user_id"],
-                    "author": row["username"],
-                }
-            )
+
+            user = {
+                "id": row["user_id"],
+                "firstName": row["user_first_name"],
+                "lastName": row["user_last_name"]
+            }
+            category = {
+                "id": row["category_id"],
+                "label": row["category_label"],
+            }
+            post = {
+                "id": row["id"],
+                "title": row["title"],
+                "content": row["content"],
+                "image_url": row["image_url"],
+                "publication_date": row["publication_date"],
+                "user_id": row["user_id"],
+                "user": user,
+                "category_id": row["category_id"],
+                "category": category,
+                "author": row["username"],
+            }
+
+            posts.append(post)
+
         return posts
 
 

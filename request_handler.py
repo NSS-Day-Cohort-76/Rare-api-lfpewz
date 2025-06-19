@@ -100,7 +100,17 @@ class RequestHandler(BaseHTTPRequestHandler):
         else:
             self._send_response(404, {"error": "Post not found"})
 
-    # 🔐 Register handler with duplicate username/email check
+    # # 🔐 Register handler with duplicate username/email check
+    # def _handle_register(self, body):
+    #     result = create_user(body)
+
+    #     if "error" in result:
+    #         self._send_response(400, {"error": result["error"]})
+    #     else:
+    #         self._send_response(
+    #             201, {"valid": True, "token": f"rare_token_user_{result['id']}"}
+    #         )
+
     def _handle_register(self, body):
         result = create_user(body)
 
@@ -108,8 +118,13 @@ class RequestHandler(BaseHTTPRequestHandler):
             self._send_response(400, {"error": result["error"]})
         else:
             self._send_response(
-                201, {"valid": True, "token": f"rare_token_user_{result['id']}"}
-            )
+                201,
+                {
+                    "valid": True,
+                    "user_id": result["id"],
+                    "isStaff": result.get("isStaff", 1)  # Adjust key as needed
+                }
+        )
 
     def do_PUT(self):
         content_length = int(self.headers["Content-Length"])
