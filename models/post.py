@@ -1,3 +1,4 @@
+import json
 import sqlite3
 from datetime import datetime
 
@@ -29,7 +30,7 @@ def create_post(post):
                 publication_date,
                 approved
             )
-            VALUES (?, ?, ?, ?, ?, ?, 1)
+            VALUES (?, ?, ?, ?, ?, ?, false)
         """,
             (
                 post["user_id"],
@@ -54,3 +55,79 @@ def create_post(post):
         "publication_date": publication_date,
         "approved": True,
     }
+
+
+def get_all_posts():
+    with sqlite3.connect("./db.sqlite3") as conn:
+        conn.row_factory = sqlite3.Row
+        db_cursor = conn.cursor()
+        db_cursor.execute("""
+            SELECT
+                p.id,
+                p.title,
+                p.content,
+                p.image_url,
+                p.publication_date,
+                p.user_id,
+                u.username
+            FROM Posts p
+            JOIN Users u ON p.user_id = u.id
+            JOIN Categories c ON p.category_id = c.id
+        """)
+
+        posts = []
+        dataset = db_cursor.fetchall()
+        for row in dataset:
+            posts.append({
+                "id": row["id"],
+                "title": row["title"],
+                "content": row["content"],
+                "image_url": row["image_url"],
+                "publication_date": row["publication_date"],
+                "user_id": row["user_id"],
+                "author": row["username"],
+            })
+        return posts
+
+# def get_all_posts():
+#     with sqlite3.connect("./db.sqlite3") as conn:
+#         conn.row_factory = sqlite3.Row
+#         db_cursor = conn.cursor()
+
+#         db_cursor.execute(
+#             """
+#             SELECT
+#                 p.id,
+#                 p.category_id,
+#                 p.user_id,
+#                 c.label AS category_label,
+#                 u.first_name AS user_first_name,
+#                 u.last_name AS user_last_name
+#             FROM "Posts" p
+#             JOIN Category c ON c.id = p.category_id
+#             JOIN User u ON u.id = p.user_id
+#             """
+#         )
+
+#         query_results = db_cursor.fetchall()
+#         posts = []
+#         for row in query_results:
+#             category = {
+#                 "id": row["category_id"],
+#                 "label": row["category_label"],
+#             }
+#             user = {
+#                 "id": row["user_id"],
+#                 "first_name": row["user_first_name"],
+#                 "last_name": row["user_last_name"],
+#             }
+#             post = {
+#                 "id": row["id"],
+#                 "category_id": row["category_id"],
+#                 "category": category,
+#                 "user_id": row["user_id"],
+#                 "user": user,
+#                 # "created_at": row["created_at"] if row["created_at"] is not None else ""
+#             }
+#             posts.append(post)
+#     return posts

@@ -40,3 +40,17 @@ def get_tags():
         for row in dataset:
             tags.append({"id": row["id"], "label": row["label"]})
         return tags
+
+
+def delete_tag(tag_id):
+    with sqlite3.connect("./db.sqlite3") as conn:
+        db_cursor = conn.cursor()
+        db_cursor.execute("DELETE FROM Tags WHERE id = ?", (tag_id,))
+        return db_cursor.rowcount > 0  # True if a row was deleted
+
+
+def update_tag(tag_id, label):
+    with sqlite3.connect("./db.sqlite3") as conn:
+        db_cursor = conn.cursor()
+        db_cursor.execute("UPDATE Tags SET label = ? WHERE id = ?", (label, tag_id))
+        return db_cursor.rowcount > 0  # True if a row was updated

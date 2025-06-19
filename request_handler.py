@@ -1,8 +1,18 @@
 from http.server import BaseHTTPRequestHandler
 import json
 from models.user import create_user, login_user
-from views.post import handle_create_post, handle_get_post, handle_update_post
-from views.tagsView import handle_create_tag, handle_get_tags
+from views.tagsView import (
+    handle_create_tag,
+    handle_get_tags,
+    handle_delete_tag,
+    handle_update_tag,
+)
+from views.post import (
+    handle_create_post,
+    handle_get_post,
+    handle_update_post,
+    handle_get_all_posts,
+)
 
 
 class RequestHandler(BaseHTTPRequestHandler):
@@ -48,6 +58,7 @@ class RequestHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         print("🔥 GET hit:", self.path)  # debug print
+
         if self.path.startswith("/posts/"):
             try:
                 post_id = int(self.path.split("/")[-1])
@@ -60,9 +71,23 @@ class RequestHandler(BaseHTTPRequestHandler):
 
             except ValueError:
                 self._send_response(400, {"error": "Invalid post ID"})
+        elif self.path.rstrip("/") == "/posts":
+            status, result = handle_get_all_posts()
+            self._send_response(status, result)
         elif self.path.rstrip("/") == "/tags":
             status, result = handle_get_tags()
             self._send_response(status, result)
+        else:
+            self._send_response(404, {"error": "Route not handled"})
+
+    def do_DELETE(self):
+        if self.path.startswith("/tags/"):
+            try:
+                tag_id = int(self.path.split("/")[-1])
+                status, result = handle_delete_tag(tag_id)
+                self._send_response(status, result)
+            except ValueError:
+                self._send_response(400, {"error": "Invalid tag ID"})
         else:
             self._send_response(404, {"error": "Route not handled"})
 
@@ -74,7 +99,9 @@ class RequestHandler(BaseHTTPRequestHandler):
             self._send_response(400, {"error": result["error"]})
         else:
             self._send_response(
-                201, {"valid": True, "token": f"rare_token_user_{result['id']}"}
+                201,
+                {"valid": True, "token": result[{"id", "email"}]},
+                # 201, {"valid": True, "token": f"rare_token_user_{result['id']}"}
             )
 
     def do_PUT(self):
@@ -89,6 +116,15 @@ class RequestHandler(BaseHTTPRequestHandler):
                 self._send_response(204, {})
             except ValueError:
                 self._send_response(400, {"error": "Invalid post ID"})
+        if self.path.startswith("/tags/"):
+            try:
+                tag_id = int(self.path.split("/")[-1])
+                status, result = handle_update_tag(tag_id, data)
+                self._send_response(status, result)
+            except ValueError:
+                self._send_response(400, {"error": "Invalid tag ID"})
+        else:
+            self._send_response(404, {"error": "Route not handled"})
 
     # 🔐 Login handler
     def _handle_login(self, body):
