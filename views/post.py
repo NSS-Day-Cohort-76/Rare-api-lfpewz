@@ -1,4 +1,4 @@
-from models.post import create_post, get_all_posts
+from models.post import create_post, get_all_posts, delete_post
 import sqlite3
 
 
@@ -22,6 +22,7 @@ def handle_create_post(body):
 def handle_get_all_posts():
     posts = get_all_posts()
     return (200, posts)
+
 
 def handle_get_post(post_id):
     with sqlite3.connect("./db.sqlite3") as conn:
@@ -72,12 +73,17 @@ def handle_update_post(post_id, updated_data):
             WHERE id = ?
         """,
             (
-                updated_data["title"],
-                updated_data["content"],
-                updated_data["category_id"],
+                updated_data.get("title", ""),
+                updated_data.get("content", ""),
+                updated_data.get("category_id", 1),  # fallback to category 1 if missing
                 updated_data.get("image_url", ""),
                 post_id,
             ),
         )
 
     return True
+
+
+def handle_delete_post(post_id):
+    delete_post(post_id)
+    return (204, "")
