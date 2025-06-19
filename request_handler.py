@@ -52,9 +52,10 @@ class RequestHandler(BaseHTTPRequestHandler):
         elif self.path == "/posts":
             # 🔐 Grab the token from the headers: "Token rare_token_user_6"
             auth_header = self.headers.get("Authorization")
-            if auth_header and auth_header.startswith("Token rare_token_user_"):
+
+            if auth_header and auth_header.startswith("Token "):
                 try:
-                    user_id = int(auth_header.split("_")[-1])
+                    user_id = int(auth_header.split(" ")[1])
                     body["user_id"] = user_id
                 except ValueError:
                     return self._send_response(400, {"error": "Invalid token format"})
