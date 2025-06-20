@@ -2,6 +2,7 @@ from http.server import BaseHTTPRequestHandler
 import json
 from urllib.parse import parse_qs
 
+# 🔼 All imports up top like a pro
 from models.user import create_user, login_user
 from views.tagsView import (
     handle_create_tag,
@@ -22,10 +23,12 @@ from views.comment_view import (
     handle_create_comment,
     handle_update_comment,
     handle_delete_comment,
+    handle_get_comment_by_id,
 )
 
 
 class RequestHandler(BaseHTTPRequestHandler):
+
     def parse_url(self, path):
         path_parts = path.strip("/").split("?")
         resource_path = path_parts[0].split("/")
@@ -34,7 +37,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         if len(path_parts) > 1:
             query_params = parse_qs(path_parts[1])
 
-        result = {
+        return {
             "resource": resource_path[0],
             "id": (
                 int(resource_path[1])
@@ -43,8 +46,6 @@ class RequestHandler(BaseHTTPRequestHandler):
             ),
             "query_params": query_params,
         }
-
-        return result
 
     def do_OPTIONS(self):
         self.send_response(200)
@@ -64,10 +65,11 @@ class RequestHandler(BaseHTTPRequestHandler):
         if resource == "posts":
             if id is not None:
                 post = handle_get_post(id)
-                if post:
+                (
                     self._send_response(200, post)
-                else:
-                    self._send_response(404, {"error": "Post not found"})
+                    if post
+                    else self._send_response(404, {"error": "Post not found"})
+                )
             else:
                 status, result = handle_get_all_posts()
                 self._send_response(status, result)
@@ -82,18 +84,9 @@ class RequestHandler(BaseHTTPRequestHandler):
 
         elif resource == "comments":
             if id is not None:
-                try:
-                    from views.comment_view import handle_get_comment_by_id
-
-                    status, result = handle_get_comment_by_id(id)
-                    self._send_response(status, result)
-                except Exception as e:
-                    self._send_response(
-                        500, {"error": f"Failed to retrieve comment: {str(e)}"}
-                    )
+                status, result = handle_get_comment_by_id(id)
+                self._send_response(status, result)
             else:
-                from views.comment_view import handle_get_comments
-
                 status, result = handle_get_comments(resource, query_params)
                 self._send_response(status, result)
 
