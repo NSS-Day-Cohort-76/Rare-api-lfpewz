@@ -122,3 +122,6 @@ INSERT INTO Categories ("label") VALUES
   ('Movies'),
   ('Gaming'),
   ('DIY');
+
+ALTER TABLE Comments ADD COLUMN subject TEXT;
+ALTER TABLE Comments ADD COLUMN created_on TEXT;

@@ -1,28 +1,61 @@
-from models.post import create_post, get_all_posts, delete_post
+from models.post import create_post, get_all_posts, delete_post, get_most_recent_post
 import sqlite3
 
 
 
-def handle_create_post(body):
+# def handle_create_post(body):
+#     """
+#     Handles creating a new post.
+
+#     Args:
+#         body (dict): The JSON data from the request.
+
+#     Returns:
+#         tuple: (status_code, response_body)
+#     """
+#     # 🔁 Ask the model to save the post in the database
+#     result = create_post(body)
+
+#     # ✅ Send back the new post's ID with status 201 (Created)
+#     return (201, result)
+
+
+def handle_create_post(body, auth_header):
     """
     Handles creating a new post.
 
     Args:
         body (dict): The JSON data from the request.
+        auth_header (str): The Authorization header from the request.
 
     Returns:
         tuple: (status_code, response_body)
     """
+    if not (auth_header and auth_header.startswith("Token ")):
+        return (401, {"error": "Authorization header missing or malformed"})
+    try:
+        user_id = int(auth_header.split(" ")[1])
+        body["user_id"] = user_id
+    except (IndexError, ValueError):
+        return (400, {"error": "Invalid token format"})
+
     # 🔁 Ask the model to save the post in the database
     result = create_post(body)
 
     # ✅ Send back the new post's ID with status 201 (Created)
     return (201, result)
 
-
 def handle_get_all_posts():
     posts = get_all_posts()
     return (200, posts)
+
+
+def handle_get_most_recent_post():
+    post = get_most_recent_post()
+    if post:
+        return 200, post
+    else:
+        return 404, {"error": "No posts found"}
 
 
 def handle_get_post(post_id):

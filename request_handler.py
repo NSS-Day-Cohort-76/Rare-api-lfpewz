@@ -14,6 +14,7 @@ from views.post import (
     handle_update_post,
     handle_get_all_posts,
     handle_delete_post,
+    handle_get_most_recent_post,
 )
 
 from views.category import (handle_get_all_categories)
@@ -42,6 +43,40 @@ class RequestHandler(BaseHTTPRequestHandler):
 
         self.end_headers()
 
+    # def do_POST(self):
+    #     content_length = int(self.headers["Content-Length"])
+    #     post_data = self.rfile.read(content_length)
+    #     body = json.loads(post_data)
+
+    #     if self.path == "/register":
+    #         self._handle_register(body)
+    #     elif self.path == "/login":
+    #         self._handle_login(body)
+    #     elif self.path.rstrip("/") == "/tags":
+    #         status, result = handle_create_tag(body)
+    #         self._send_response(status, result)
+    #     elif self.path == "/posts":
+    #         auth_header = self.headers.get("Authorization")
+
+    #         if auth_header and auth_header.startswith("Token "):
+    #             try:
+    #                 user_id = int(auth_header.split(" ")[1])
+    #                 body["user_id"] = user_id
+    #             except ValueError:
+    #                 return self._send_response(400, {"error": "Invalid token format"})
+    #         else:
+    #             return self._send_response(
+    #                 401, {"error": "Authorization header missing or malformed"}
+    #             )
+    #         try:
+    #             user_id = int(auth_header.split(" ")[1])
+    #             body["user_id"] = user_id
+    #         except (IndexError, ValueError):
+    #             return self._send_response(400, {"error": "Invalid user ID format"})
+
+    #         status, result = handle_create_post(body)
+    #         self._send_response(status, result)
+
     def do_POST(self):
         content_length = int(self.headers["Content-Length"])
         post_data = self.rfile.read(content_length)
@@ -51,32 +86,30 @@ class RequestHandler(BaseHTTPRequestHandler):
             self._handle_register(body)
         elif self.path == "/login":
             self._handle_login(body)
+        elif self.path.rstrip("/") == "/tags":
+            status, result = handle_create_tag(body)
+            self._send_response(status, result)
         elif self.path == "/posts":
             auth_header = self.headers.get("Authorization")
-
-            if auth_header and auth_header.startswith("Token "):
-                try:
-                    user_id = int(auth_header.split(" ")[1])
-                    body["user_id"] = user_id
-                except ValueError:
-                    return self._send_response(400, {"error": "Invalid token format"})
-            else:
-                return self._send_response(
-                    401, {"error": "Authorization header missing or malformed"}
-                )
-            try:
-                user_id = int(auth_header.split(" ")[1])
-                body["user_id"] = user_id
-            except (IndexError, ValueError):
-                return self._send_response(400, {"error": "Invalid user ID format"})
-
-            status, result = handle_create_post(body)
+            status, result = handle_create_post(body, auth_header)
             self._send_response(status, result)
 
     def do_GET(self):
         print("🔥 GET hit:", self.path)  # debug print
 
-        if self.path.startswith("/posts/"):
+        if self.path.rstrip("/") == "/posts":
+            status, result = handle_get_all_posts()
+            self._send_response(status, result)
+        elif self.path.rstrip("/") == "/posts/mostRecentPost":
+            status, result = handle_get_most_recent_post()
+            self._send_response(status, result)
+        elif self.path.rstrip("/") == "/tags":
+            status, result = handle_get_tags()
+            self._send_response(status, result)
+        elif self.path.rstrip("/") == "/categories":
+            status, result = handle_get_all_categories()
+            self._send_response(status, result)
+        elif self.path.startswith("/posts/"):
             try:
                 post_id = int(self.path.split("/")[-1])
                 post = handle_get_post(post_id)
@@ -88,15 +121,6 @@ class RequestHandler(BaseHTTPRequestHandler):
 
             except ValueError:
                 self._send_response(400, {"error": "Invalid post ID"})
-        elif self.path.rstrip("/") == "/posts":
-            status, result = handle_get_all_posts()
-            self._send_response(status, result)
-        elif self.path.rstrip("/") == "/tags":
-            status, result = handle_get_tags()
-            self._send_response(status, result)
-        elif self.path.rstrip("/") == "/categories":
-            status, result = handle_get_all_categories()
-            self._send_response(status, result)
         else:
             self._send_response(404, {"error": "Route not handled"})
 
