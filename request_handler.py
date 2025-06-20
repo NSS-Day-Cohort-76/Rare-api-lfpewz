@@ -7,6 +7,7 @@ from views.tagsView import (
     handle_delete_tag,
     handle_update_tag,
 )
+
 from views.post import (
     handle_create_post,
     handle_get_post,
@@ -15,6 +16,7 @@ from views.post import (
     handle_delete_post,
 )
 
+from views.category import (handle_get_all_categories)
 
 class RequestHandler(BaseHTTPRequestHandler):
 
@@ -51,7 +53,14 @@ class RequestHandler(BaseHTTPRequestHandler):
             self._handle_login(body)
         elif self.path == "/posts":
             auth_header = self.headers.get("Authorization")
-            if not (auth_header and auth_header.startswith("User ")):
+
+            if auth_header and auth_header.startswith("Token "):
+                try:
+                    user_id = int(auth_header.split(" ")[1])
+                    body["user_id"] = user_id
+                except ValueError:
+                    return self._send_response(400, {"error": "Invalid token format"})
+            else:
                 return self._send_response(
                     401, {"error": "Authorization header missing or malformed"}
                 )
@@ -84,6 +93,9 @@ class RequestHandler(BaseHTTPRequestHandler):
             self._send_response(status, result)
         elif self.path.rstrip("/") == "/tags":
             status, result = handle_get_tags()
+            self._send_response(status, result)
+        elif self.path.rstrip("/") == "/categories":
+            status, result = handle_get_all_categories()
             self._send_response(status, result)
         else:
             self._send_response(404, {"error": "Route not handled"})
