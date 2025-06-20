@@ -2,6 +2,7 @@ from http.server import BaseHTTPRequestHandler
 import json
 from urllib.parse import parse_qs
 
+# 🔼 All imports up top like a pro
 from models.user import create_user, login_user
 from views.tagsView import (
     handle_create_tag,
@@ -21,6 +22,7 @@ from views.post import (
 from views.category import (handle_get_all_categories)
 
 class RequestHandler(BaseHTTPRequestHandler):
+
     def parse_url(self, path):
         path_parts = path.strip("/").split("?")
         resource_path = path_parts[0].split("/")
@@ -29,7 +31,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         if len(path_parts) > 1:
             query_params = parse_qs(path_parts[1])
 
-        result = {
+        return {
             "resource": resource_path[0],
             "id": (
                 int(resource_path[1])
@@ -38,8 +40,6 @@ class RequestHandler(BaseHTTPRequestHandler):
             ),
             "query_params": query_params,
         }
-
-        return result
 
     def do_OPTIONS(self):
         self.send_response(200)
