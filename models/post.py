@@ -1,4 +1,3 @@
-import json
 import sqlite3
 from datetime import datetime
 
@@ -88,7 +87,7 @@ def get_all_posts():
             user = {
                 "id": row["user_id"],
                 "firstName": row["user_first_name"],
-                "lastName": row["user_last_name"]
+                "lastName": row["user_last_name"],
             }
             category = {
                 "id": row["category_id"],
