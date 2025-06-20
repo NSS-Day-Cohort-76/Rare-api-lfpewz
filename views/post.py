@@ -2,6 +2,7 @@ from models.post import create_post, get_all_posts, delete_post
 import sqlite3
 
 
+
 def handle_create_post(body):
     """
     Handles creating a new post.
