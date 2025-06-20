@@ -1,5 +1,7 @@
 from http.server import BaseHTTPRequestHandler
 import json
+from urllib.parse import parse_qs
+
 from models.user import create_user, login_user
 from views.tagsView import (
     handle_create_tag,
@@ -7,7 +9,6 @@ from views.tagsView import (
     handle_delete_tag,
     handle_update_tag,
 )
-
 from views.post import (
     handle_create_post,
     handle_get_post,
@@ -15,20 +16,33 @@ from views.post import (
     handle_get_all_posts,
     handle_delete_post,
 )
+from views.category import handle_get_all_categories
+from views.comment_view import (
+    handle_get_comments,
+    handle_create_comment,
+    handle_update_comment,
+    handle_delete_comment,
+)
 
-from views.category import (handle_get_all_categories)
 
 class RequestHandler(BaseHTTPRequestHandler):
-
     def parse_url(self, path):
-        parts = path.strip("/").split("/")
-        result = {"resource": parts[0]}
+        path_parts = path.strip("/").split("?")
+        resource_path = path_parts[0].split("/")
+        query_params = {}
 
-        if len(parts) > 1:
-            try:
-                result["id"] = int(parts[1])
-            except ValueError:
-                result["id"] = None
+        if len(path_parts) > 1:
+            query_params = parse_qs(path_parts[1])
+
+        result = {
+            "resource": resource_path[0],
+            "id": (
+                int(resource_path[1])
+                if len(resource_path) > 1 and resource_path[1].isdigit()
+                else None
+            ),
+            "query_params": query_params,
+        }
 
         return result
 
@@ -39,8 +53,52 @@ class RequestHandler(BaseHTTPRequestHandler):
             "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS"
         )
         self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
-
         self.end_headers()
+
+    def do_GET(self):
+        parsed = self.parse_url(self.path)
+        resource = parsed["resource"]
+        id = parsed["id"]
+        query_params = parsed["query_params"]
+
+        if resource == "posts":
+            if id is not None:
+                post = handle_get_post(id)
+                if post:
+                    self._send_response(200, post)
+                else:
+                    self._send_response(404, {"error": "Post not found"})
+            else:
+                status, result = handle_get_all_posts()
+                self._send_response(status, result)
+
+        elif resource == "tags":
+            status, result = handle_get_tags()
+            self._send_response(status, result)
+
+        elif resource == "categories":
+            status, result = handle_get_all_categories()
+            self._send_response(status, result)
+
+        elif resource == "comments":
+            if id is not None:
+                try:
+                    from views.comment_view import handle_get_comment_by_id
+
+                    status, result = handle_get_comment_by_id(id)
+                    self._send_response(status, result)
+                except Exception as e:
+                    self._send_response(
+                        500, {"error": f"Failed to retrieve comment: {str(e)}"}
+                    )
+            else:
+                from views.comment_view import handle_get_comments
+
+                status, result = handle_get_comments(resource, query_params)
+                self._send_response(status, result)
+
+        else:
+            self._send_response(404, {"error": "Route not handled"})
 
     def do_POST(self):
         content_length = int(self.headers["Content-Length"])
@@ -49,91 +107,83 @@ class RequestHandler(BaseHTTPRequestHandler):
 
         if self.path == "/register":
             self._handle_register(body)
+
         elif self.path == "/login":
             self._handle_login(body)
+
+        elif self.path == "/tags":
+            status, result = handle_create_tag(body)
+            self._send_response(status, result)
+
         elif self.path == "/posts":
             auth_header = self.headers.get("Authorization")
-
             if auth_header and auth_header.startswith("Token "):
                 try:
                     user_id = int(auth_header.split(" ")[1])
                     body["user_id"] = user_id
-                except ValueError:
+                except (IndexError, ValueError):
                     return self._send_response(400, {"error": "Invalid token format"})
             else:
                 return self._send_response(
                     401, {"error": "Authorization header missing or malformed"}
                 )
-            try:
-                user_id = int(auth_header.split(" ")[1])
-                body["user_id"] = user_id
-            except (IndexError, ValueError):
-                return self._send_response(400, {"error": "Invalid user ID format"})
 
             status, result = handle_create_post(body)
             self._send_response(status, result)
 
-    def do_GET(self):
-        print("🔥 GET hit:", self.path)  # debug print
-
-        if self.path.startswith("/posts/"):
-            try:
-                post_id = int(self.path.split("/")[-1])
-                post = handle_get_post(post_id)
-
-                if post:
-                    self._send_response(200, post)
-                else:
-                    self._send_response(404, {"error": "Post not found"})
-
-            except ValueError:
-                self._send_response(400, {"error": "Invalid post ID"})
-        elif self.path.rstrip("/") == "/posts":
-            status, result = handle_get_all_posts()
+        elif self.path == "/comments":
+            status, result = handle_create_comment(body)
             self._send_response(status, result)
-        elif self.path.rstrip("/") == "/tags":
-            status, result = handle_get_tags()
+
+        else:
+            self._send_response(404, {"error": "Route not handled"})
+
+    def do_PUT(self):
+        content_length = int(self.headers["Content-Length"])
+        body = self.rfile.read(content_length)
+        data = json.loads(body)
+
+        parsed = self.parse_url(self.path)
+        resource = parsed["resource"]
+        id = parsed["id"]
+
+        if resource == "posts" and id is not None:
+            handle_update_post(id, data)
+            self._send_response(204, {})
+
+        elif resource == "tags" and id is not None:
+            status, result = handle_update_tag(id, data)
             self._send_response(status, result)
-        elif self.path.rstrip("/") == "/categories":
-            status, result = handle_get_all_categories()
+
+        elif resource == "comments" and id is not None:
+            status, result = handle_update_comment(id, data)
             self._send_response(status, result)
+
         else:
             self._send_response(404, {"error": "Route not handled"})
 
     def do_DELETE(self):
-        if self.path.startswith("/tags/"):
-            try:
-                tag_id = int(self.path.split("/")[-1])
-                status, result = handle_delete_tag(tag_id)
-                self._send_response(status, result)
-            except ValueError:
-                self._send_response(400, {"error": "Invalid tag ID"})
+        parsed = self.parse_url(self.path)
+        resource = parsed["resource"]
+        id = parsed["id"]
+
+        if resource == "tags" and id is not None:
+            status, result = handle_delete_tag(id)
+            self._send_response(status, result)
+
+        elif resource == "posts" and id is not None:
+            status, _ = handle_delete_post(id)
+            self._send_response(status, {})
+
+        elif resource == "comments" and id is not None:
+            status, result = handle_delete_comment(id)
+            self._send_response(status, result if result else {})
+
         else:
             self._send_response(404, {"error": "Route not handled"})
-        url = self.parse_url(self.path)
-        resource = url["resource"]
-        pk = url.get("id", None)
-
-        if resource == "posts" and pk is not None:
-            status, _ = handle_delete_post(pk)
-            self._send_response(status, {})  # Use your unified response function
-        else:
-            self._send_response(404, {"error": "Post not found"})
-
-    # # 🔐 Register handler with duplicate username/email check
-    # def _handle_register(self, body):
-    #     result = create_user(body)
-
-    #     if "error" in result:
-    #         self._send_response(400, {"error": result["error"]})
-    #     else:
-    #         self._send_response(
-    #             201, {"valid": True, "token": f"rare_token_user_{result['id']}"}
-    #         )
 
     def _handle_register(self, body):
         result = create_user(body)
-
         if "error" in result:
             self._send_response(400, {"error": result["error"]})
         else:
@@ -142,56 +192,14 @@ class RequestHandler(BaseHTTPRequestHandler):
                 {
                     "valid": True,
                     "user_id": result["id"],
-                    "isStaff": result.get("isStaff", 1),  # Adjust key as needed
+                    "isStaff": result.get("isStaff", 1),
                 },
             )
 
-    def do_PUT(self):
-        content_length = int(self.headers["Content-Length"])
-        body = self.rfile.read(content_length)
-        data = json.loads(body)
-
-        if self.path.startswith("/posts/"):
-            try:
-                post_id = int(self.path.split("/")[-1])
-                handle_update_post(post_id, data)
-                self._send_response(204, {})
-            except ValueError:
-                self._send_response(400, {"error": "Invalid post ID"})
-        if self.path.startswith("/tags/"):
-            try:
-                tag_id = int(self.path.split("/")[-1])
-                status, result = handle_update_tag(tag_id, data)
-                self._send_response(status, result)
-            except ValueError:
-                self._send_response(400, {"error": "Invalid tag ID"})
-        else:
-            self._send_response(404, {"error": "Route not handled"})
-
-    # 🔐 Login handler
     def _handle_login(self, body):
         result = login_user(body)
         self._send_response(200, result)
 
-    # def _handle_login(self, body):
-    #     try:
-    #         result = login_user(body)
-    #         if "error" in result:
-    #             self._send_response(401, {"valid": False, "error": result["error"]})
-    #         else:
-    #             self._send_response(
-    #                 200,
-    #                 {
-    #                     "valid": True,
-    #                     "user_id": result["id"],
-    #                     "isStaff": result.get("isStaff", 1),
-    #                 },
-    #             )
-    #     except Exception as ex:
-    #         print("Error in _handle_login:", ex)
-    #         self._send_response(500, {"error": "Internal server error"})
-
-    # 🔁 Shared response helper
     def _send_response(self, status_code, response_obj):
         self.send_response(status_code)
         self.send_header("Content-Type", "application/json")
