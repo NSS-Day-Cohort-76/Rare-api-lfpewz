@@ -16,7 +16,8 @@ from views.post import (
     handle_delete_post,
 )
 
-from views.category import (handle_get_all_categories)
+from views.category import handle_get_all_categories
+
 
 class RequestHandler(BaseHTTPRequestHandler):
 
@@ -51,6 +52,9 @@ class RequestHandler(BaseHTTPRequestHandler):
             self._handle_register(body)
         elif self.path == "/login":
             self._handle_login(body)
+        elif self.path.rstrip("/") == "/tags":
+            status, result = handle_create_tag(body)
+            self._send_response(status, result)
         elif self.path == "/posts":
             auth_header = self.headers.get("Authorization")
 
