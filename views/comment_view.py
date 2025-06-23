@@ -17,6 +17,9 @@ def handle_get_comments(resource, query_params):
     else:
         return (400, {"message": "Missing post_id query parameter"})
 
+def handle_get_comments_by_post_id(post_id):
+    comments = get_comments_by_post(post_id)
+    return 200, comments
 
 def handle_create_comment(body):
     try:

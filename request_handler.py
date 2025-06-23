@@ -1,5 +1,6 @@
 from http.server import BaseHTTPRequestHandler
 import json
+import resource
 from urllib.parse import parse_qs
 
 # 🔼 All imports up top like a pro
@@ -18,6 +19,13 @@ from views.post import (
     handle_delete_post,
     handle_get_most_recent_post,
 )
+from views.comment_view import (
+    handle_create_comment, 
+    handle_delete_comment, 
+    handle_get_comment_by_id, 
+    handle_get_comments, 
+    handle_update_comment,
+    handle_get_comments_by_post_id)
 
 from views.category import (handle_get_all_categories)
 
@@ -49,40 +57,6 @@ class RequestHandler(BaseHTTPRequestHandler):
         )
         self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
         self.end_headers()
-
-    # def do_POST(self):
-    #     content_length = int(self.headers["Content-Length"])
-    #     post_data = self.rfile.read(content_length)
-    #     body = json.loads(post_data)
-
-    #     if self.path == "/register":
-    #         self._handle_register(body)
-    #     elif self.path == "/login":
-    #         self._handle_login(body)
-    #     elif self.path.rstrip("/") == "/tags":
-    #         status, result = handle_create_tag(body)
-    #         self._send_response(status, result)
-    #     elif self.path == "/posts":
-    #         auth_header = self.headers.get("Authorization")
-
-    #         if auth_header and auth_header.startswith("Token "):
-    #             try:
-    #                 user_id = int(auth_header.split(" ")[1])
-    #                 body["user_id"] = user_id
-    #             except ValueError:
-    #                 return self._send_response(400, {"error": "Invalid token format"})
-    #         else:
-    #             return self._send_response(
-    #                 401, {"error": "Authorization header missing or malformed"}
-    #             )
-    #         try:
-    #             user_id = int(auth_header.split(" ")[1])
-    #             body["user_id"] = user_id
-    #         except (IndexError, ValueError):
-    #             return self._send_response(400, {"error": "Invalid user ID format"})
-
-    #         status, result = handle_create_post(body)
-    #         self._send_response(status, result)
 
     def do_POST(self):
         content_length = int(self.headers["Content-Length"])
@@ -117,6 +91,13 @@ class RequestHandler(BaseHTTPRequestHandler):
         elif self.path.rstrip("/") == "/categories":
             status, result = handle_get_all_categories()
             self._send_response(status, result)
+        # elif resource == "comments":
+        #     if id is not None:
+        #         status, result = handle_get_comment_by_id(id)
+        #         self._send_response(status, result)
+        #     else:
+        #         status, result = handle_get_comments(resource, query_params)
+        #         self._send_response(status, result)
         elif self.path.startswith("/posts/"):
             try:
                 post_id = int(self.path.split("/")[-1])
