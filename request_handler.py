@@ -16,8 +16,16 @@ from views.post import (
     handle_update_post,
     handle_get_all_posts,
     handle_delete_post,
+    handle_get_most_recent_post
 )
-from views.category import handle_get_all_categories
+
+from views.category import (
+    handle_get_all_categories, 
+    handle_create_category,
+    handle_delete_category,
+    handle_update_category
+    )
+
 from views.comment_view import (
     handle_get_comments,
     handle_create_comment,
@@ -62,18 +70,9 @@ class RequestHandler(BaseHTTPRequestHandler):
         id = parsed["id"]
         query_params = parsed["query_params"]
 
-        if resource == "posts":
-            if id is not None:
-                post = handle_get_post(id)
-                (
-                    self._send_response(200, post)
-                    if post
-                    else self._send_response(404, {"error": "Post not found"})
-                )
-            else:
-                status, result = handle_get_all_posts()
-                self._send_response(status, result)
-
+        if self.path.rstrip("/") == "/posts/mostRecentPost":
+            status, result = handle_get_most_recent_post()
+            self._send_response(status, result)
         elif resource == "tags":
             status, result = handle_get_tags()
             self._send_response(status, result)
@@ -88,6 +87,16 @@ class RequestHandler(BaseHTTPRequestHandler):
                 self._send_response(status, result)
             else:
                 status, result = handle_get_comments(resource, query_params)
+                self._send_response(status, result)
+        elif resource == "posts":
+            if id is not None:
+                post = handle_get_post(id)
+                if post:
+                    self._send_response(200, post)
+                else:
+                    self._send_response(404, {"error": "Post not found"})
+            else:
+                status, result = handle_get_all_posts()
                 self._send_response(status, result)
 
         else:
@@ -128,6 +137,13 @@ class RequestHandler(BaseHTTPRequestHandler):
             status, result = handle_create_comment(body)
             self._send_response(status, result)
 
+        elif self.path == "/categories" and self.command == "POST":
+            status, result = handle_create_category(body)
+            self._send_response(status, result)
+
+            
+
+
         else:
             self._send_response(404, {"error": "Route not handled"})
 
@@ -152,6 +168,10 @@ class RequestHandler(BaseHTTPRequestHandler):
             status, result = handle_update_comment(id, data)
             self._send_response(status, result)
 
+        elif resource == "categories" and id is not None:
+            status, result = handle_update_category(id, data)
+            self._send_response(status, result)
+
         else:
             self._send_response(404, {"error": "Route not handled"})
 
@@ -170,6 +190,10 @@ class RequestHandler(BaseHTTPRequestHandler):
 
         elif resource == "comments" and id is not None:
             status, result = handle_delete_comment(id)
+            self._send_response(status, result if result else {})
+
+        elif resource == "categories" and id is not None:
+            status, result = handle_delete_category(id)
             self._send_response(status, result if result else {})
 
         else:
