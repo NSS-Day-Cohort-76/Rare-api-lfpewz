@@ -71,25 +71,16 @@ class RequestHandler(BaseHTTPRequestHandler):
         id = parsed["id"]
         query_params = parsed["query_params"]
 
-        if resource == "posts":
-            if id is not None:
-                post = handle_get_post(id)
-                (
-                    self._send_response(200, post)
-                    if post
-                    else self._send_response(404, {"error": "Post not found"})
-                )
-            else:
-                status, result = handle_get_all_posts()
-                self._send_response(status, result)
-
-        elif resource == "users":  # ✅ NEW ADMIN ENDPOINT
-            status, result = handle_get_all_users()
-            self._send_response(status, result)
-
+        # Special case route (not handled by parse_url)
         if self.path.rstrip("/") == "/posts/mostRecentPost":
             status, result = handle_get_most_recent_post()
             self._send_response(status, result)
+            return  # ✅ prevent fallthrough to 404
+
+        if resource == "users":  # ✅ Admin-only user list
+            status, result = handle_get_all_users()
+            self._send_response(status, result)
+
         elif resource == "tags":
             status, result = handle_get_tags()
             self._send_response(status, result)
@@ -101,10 +92,10 @@ class RequestHandler(BaseHTTPRequestHandler):
         elif resource == "comments":
             if id is not None:
                 status, result = handle_get_comment_by_id(id)
-                self._send_response(status, result)
             else:
                 status, result = handle_get_comments(resource, query_params)
-                self._send_response(status, result)
+            self._send_response(status, result)
+
         elif resource == "posts":
             if id is not None:
                 post = handle_get_post(id)
@@ -152,10 +143,6 @@ class RequestHandler(BaseHTTPRequestHandler):
 
         elif self.path == "/comments":
             status, result = handle_create_comment(body)
-            self._send_response(status, result)
-
-        elif self.path == "/categories" and self.command == "POST":
-            status, result = handle_create_category(body)
             self._send_response(status, result)
 
         elif self.path == "/categories" and self.command == "POST":
