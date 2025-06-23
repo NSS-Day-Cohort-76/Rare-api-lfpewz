@@ -44,3 +44,4 @@ def update_category(label, category_id):
         )
         return db_cursor.rowcount > 0  # True if a row was updated
 
+

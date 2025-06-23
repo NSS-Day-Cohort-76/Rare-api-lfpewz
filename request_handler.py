@@ -16,15 +16,16 @@ from views.post import (
     handle_update_post,
     handle_get_all_posts,
     handle_delete_post,
-    handle_get_most_recent_post
+    handle_get_most_recent_post,
+    handle_get_posts_by_category
 )
 
 from views.category import (
-    handle_get_all_categories, 
+    handle_get_all_categories,
     handle_create_category,
     handle_delete_category,
-    handle_update_category
-    )
+    handle_update_category,
+)
 
 from views.comment_view import (
     handle_get_comments,
@@ -64,6 +65,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
         self.end_headers()
 
+
     def do_GET(self):
         parsed = self.parse_url(self.path)
         resource = parsed["resource"]
@@ -73,6 +75,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         if self.path.rstrip("/") == "/posts/mostRecentPost":
             status, result = handle_get_most_recent_post()
             self._send_response(status, result)
+
         elif resource == "tags":
             status, result = handle_get_tags()
             self._send_response(status, result)
@@ -84,10 +87,10 @@ class RequestHandler(BaseHTTPRequestHandler):
         elif resource == "comments":
             if id is not None:
                 status, result = handle_get_comment_by_id(id)
-                self._send_response(status, result)
             else:
                 status, result = handle_get_comments(resource, query_params)
-                self._send_response(status, result)
+            self._send_response(status, result)
+
         elif resource == "posts":
             if id is not None:
                 post = handle_get_post(id)
@@ -95,6 +98,15 @@ class RequestHandler(BaseHTTPRequestHandler):
                     self._send_response(200, post)
                 else:
                     self._send_response(404, {"error": "Post not found"})
+
+            elif "category_id" in query_params:
+                try:
+                    category_id = int(query_params["category_id"][0])
+                    status, result = handle_get_posts_by_category(category_id)
+                    self._send_response(status, result)
+                except ValueError:
+                    self._send_response(400, {"error": "Invalid category_id"})
+
             else:
                 status, result = handle_get_all_posts()
                 self._send_response(status, result)
@@ -140,9 +152,6 @@ class RequestHandler(BaseHTTPRequestHandler):
         elif self.path == "/categories" and self.command == "POST":
             status, result = handle_create_category(body)
             self._send_response(status, result)
-
-            
-
 
         else:
             self._send_response(404, {"error": "Route not handled"})
