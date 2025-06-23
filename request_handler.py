@@ -4,6 +4,7 @@ from urllib.parse import parse_qs
 
 # 🔼 All imports up top like a pro
 from models.user import create_user, login_user
+from views.user_view import handle_get_all_users  # ✅ ADD THIS
 from views.tagsView import (
     handle_create_tag,
     handle_get_tags,
@@ -73,6 +74,10 @@ class RequestHandler(BaseHTTPRequestHandler):
             else:
                 status, result = handle_get_all_posts()
                 self._send_response(status, result)
+
+        elif resource == "users":  # ✅ NEW ADMIN ENDPOINT
+            status, result = handle_get_all_users()
+            self._send_response(status, result)
 
         elif resource == "tags":
             status, result = handle_get_tags()

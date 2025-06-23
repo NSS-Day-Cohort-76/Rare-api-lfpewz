@@ -12,7 +12,9 @@ def login_user(user):
     Returns:
         dict: {
             "valid": True,
-            "token": "rare_token_user_<id>"
+            "user_id": 2,
+            "is_staff": True,
+            "token": "rare_token_user_2"
         }
         or {
             "valid": False
@@ -24,7 +26,7 @@ def login_user(user):
 
         db_cursor.execute(
             """
-            SELECT id, username
+            SELECT id, isStaff
             FROM Users
             WHERE username = ? AND password = ?
             """,
@@ -33,19 +35,17 @@ def login_user(user):
 
         user_from_db = db_cursor.fetchone()
 
-        if user_from_db is not None:
+        if user_from_db:
             user_id = user_from_db["id"]
-            # isStaff = user_from_db["isStaff"]  # Adjust this key as needed
-            return {"valid": True, "user_id": user_id}
-        else:
-            return {"valid": False}
+            is_staff = bool(user_from_db["isStaff"])
+            return {
+                "valid": True,
+                "user_id": user_id,
+                "is_staff": is_staff,
+                "token": f"rare_token_user_{user_id}",
+            }
 
-        # if user_from_db is not None:
-        #     user_id = user_from_db["id"]
-        #     return {"valid": True, "token": user_id}
-        #     # return {"valid": True, "token": f"rare_token_user_{user_id}"}
-        # else:
-        #     return {"valid": False}
+        return {"valid": False}
 
 
 def create_user(user):
@@ -60,7 +60,7 @@ def create_user(user):
             "id": <new_user_id>
         }
         or {
-            "error": "..."
+            "error": "reason"
         }
     """
     with sqlite3.connect("./db.sqlite3") as conn:
@@ -79,6 +79,7 @@ def create_user(user):
         if db_cursor.fetchone():
             return {"error": "Username already taken"}
 
+        # Insert new user
         db_cursor.execute(
             """
             INSERT INTO Users (
@@ -101,8 +102,39 @@ def create_user(user):
                 user["email"],
                 user["password"],
                 user["bio"],
-                datetime.now()
+                datetime.now(),
             ),
         )
 
         return {"id": db_cursor.lastrowid}
+
+
+def get_all_users():
+    with sqlite3.connect("./db.sqlite3") as conn:
+        conn.row_factory = sqlite3.Row
+        db_cursor = conn.cursor()
+
+        db_cursor.execute(
+            """
+            SELECT 
+                id, 
+                username AS display_name, 
+                first_name, 
+                last_name, 
+                isStaff
+            FROM Users
+        """
+        )
+
+        rows = db_cursor.fetchall()
+
+        return [
+            {
+                "id": row["id"],
+                "display_name": row["display_name"],
+                "first_name": row["first_name"],
+                "last_name": row["last_name"],
+                "is_staff": bool(row["isStaff"]),
+            }
+            for row in rows
+        ]
