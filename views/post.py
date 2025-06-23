@@ -1,4 +1,4 @@
-from models.post import create_post, get_all_posts, delete_post
+from models.post import create_post, get_all_posts, delete_post, get_most_recent_post
 import sqlite3
 
 
@@ -88,3 +88,10 @@ def handle_update_post(post_id, updated_data):
 def handle_delete_post(post_id):
     delete_post(post_id)
     return (204, "")
+
+def handle_get_most_recent_post():
+    post = get_most_recent_post()
+    if post:
+        return 200, post
+    else:
+        return 404, {"error": "No posts found"}
