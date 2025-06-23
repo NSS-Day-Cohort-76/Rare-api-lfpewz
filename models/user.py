@@ -101,7 +101,7 @@ def create_user(user):
                 user["email"],
                 user["password"],
                 user["bio"],
-                datetime.now(),
+                datetime.now()
             ),
         )
 

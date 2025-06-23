@@ -100,3 +100,26 @@ INSERT INTO Users (
 ) VALUES (
   'John', 'Doe', 'john.doe@email.com', 'Sample bio', 'johndoe', 'password123', 'http://example.com/image.jpg', '2025-06-16', 1
 );
+
+INSERT INTO Categories ("label") VALUES
+  ('Science'),
+  ('Technology'),
+  ('Art'),
+  ('Sports'),
+  ('Philosophy'),
+  ('Economics'),
+  ('Health'),
+  ('Travel'),
+  ('Food'),
+  ('Education'),
+  ('History'),
+  ('Literature'),
+  ('Music'),
+  ('Politics'),
+  ('Environment'),
+  ('Business'),
+  ('Fashion'),
+  ('Movies'),
+  ('Gaming'),
+  ('DIY');
+  

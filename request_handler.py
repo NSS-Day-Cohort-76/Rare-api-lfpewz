@@ -7,6 +7,7 @@ from views.tagsView import (
     handle_delete_tag,
     handle_update_tag,
 )
+
 from views.post import (
     handle_create_post,
     handle_get_post,
@@ -14,6 +15,8 @@ from views.post import (
     handle_get_all_posts,
     handle_delete_post,
 )
+
+from views.category import handle_get_all_categories
 
 
 class RequestHandler(BaseHTTPRequestHandler):
@@ -49,12 +52,15 @@ class RequestHandler(BaseHTTPRequestHandler):
             self._handle_register(body)
         elif self.path == "/login":
             self._handle_login(body)
+        elif self.path.rstrip("/") == "/tags":
+            status, result = handle_create_tag(body)
+            self._send_response(status, result)
         elif self.path == "/posts":
-            # 🔐 Grab the token from the headers: "Token rare_token_user_6"
             auth_header = self.headers.get("Authorization")
+
             if auth_header and auth_header.startswith("Token "):
                 try:
-                    user_id = int(auth_header.split("_")[-1])
+                    user_id = int(auth_header.split(" ")[1])
                     body["user_id"] = user_id
                 except ValueError:
                     return self._send_response(400, {"error": "Invalid token format"})
@@ -62,11 +68,13 @@ class RequestHandler(BaseHTTPRequestHandler):
                 return self._send_response(
                     401, {"error": "Authorization header missing or malformed"}
                 )
+            try:
+                user_id = int(auth_header.split(" ")[1])
+                body["user_id"] = user_id
+            except (IndexError, ValueError):
+                return self._send_response(400, {"error": "Invalid user ID format"})
 
             status, result = handle_create_post(body)
-            self._send_response(status, result)
-        elif self.path == "/tags" or self.path == "/tags/":
-            status, result = handle_create_tag(body)
             self._send_response(status, result)
 
     def do_GET(self):
@@ -89,6 +97,9 @@ class RequestHandler(BaseHTTPRequestHandler):
             self._send_response(status, result)
         elif self.path.rstrip("/") == "/tags":
             status, result = handle_get_tags()
+            self._send_response(status, result)
+        elif self.path.rstrip("/") == "/categories":
+            status, result = handle_get_all_categories()
             self._send_response(status, result)
         else:
             self._send_response(404, {"error": "Route not handled"})

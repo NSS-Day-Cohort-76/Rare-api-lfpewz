@@ -1,47 +1,71 @@
 import sqlite3
 from datetime import datetime
 
-
-def create_post(post):
-    """
-    Adds a new post to the Posts table.
-
-    Args:
-        post (dict): The post data from the frontend.
-
-    Returns:
-        dict: The newly created post as a dictionary
-    """
-    publication_date = datetime.now().isoformat()
-    image_url = post.get("image_url", "")  # Optional
+def create_post(body):
+    required_fields = ["title", "content", "category_id", "user_id"]
+    for field in required_fields:
+        if field not in body:
+            return 400, {"error": f"Missing field: {field}"}
 
     with sqlite3.connect("./db.sqlite3") as conn:
         db_cursor = conn.cursor()
-
         db_cursor.execute(
             """
-            INSERT INTO Posts (
-                user_id,
-                category_id,
-                title,
-                content,
-                image_url,
-                publication_date,
-                approved
-            )
-            VALUES (?, ?, ?, ?, ?, ?, false)
-        """,
+            INSERT INTO Posts (title, content, category_id, user_id, publication_date)
+            VALUES (?, ?, ?, ?, ?)
+            """,
             (
-                post["user_id"],
-                post["category_id"],
-                post["title"],
-                post["content"],
-                image_url,
-                publication_date,
+                body["title"],
+                body["content"],
+                body["category_id"],
+                body["user_id"],
+                datetime.now().isoformat()
             ),
         )
+        post_id = db_cursor.lastrowid
 
-        new_post_id = db_cursor.lastrowid
+    return 201, {"id": post_id, "message": "Post created"}
+
+# def create_post(post):
+#     """
+#     Adds a new post to the Posts table.
+
+#     Args:
+#         post (dict): The post data from the frontend.
+
+#     Returns:
+#         dict: The newly created post as a dictionary
+#     """
+#     publication_date = datetime.now().isoformat()
+#     image_url = post.get("image_url", "")  # Optional
+
+#     with sqlite3.connect("./db.sqlite3") as conn:
+#         db_cursor = conn.cursor()
+
+#         db_cursor.execute(
+#             """
+#             INSERT INTO Posts (
+#                 user_id,
+#                 category_id,
+#                 title,
+#                 content,
+#                 image_url,
+#                 publication_date,
+#                 approved
+#             )
+#             VALUES (?, ?, ?, ?, ?, ?, false)
+#         """,
+#             (
+#                 post["user_id"],
+#                 post["category_id"],
+#                 post["title"],
+#                 post["content"],
+#                 image_url,
+#                 publication_date,
+#             ),
+#         )
+
+#         new_post_id = db_cursor.lastrowid
 
     # Return the full post object
     return {
@@ -52,7 +76,7 @@ def create_post(post):
         "content": post["content"],
         "image_url": image_url,
         "publication_date": publication_date,
-        "approved": True,
+        "approved": True
     }
 
 
