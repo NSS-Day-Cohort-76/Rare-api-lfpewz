@@ -105,4 +105,6 @@ def handle_get_most_recent_post():
     
 
 def handle_get_posts_by_category(category_id):
-    return get_posts_by_category(category_id)
+    posts = get_posts_by_category(category_id)
+    return 200, posts
+
