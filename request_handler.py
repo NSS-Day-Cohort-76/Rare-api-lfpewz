@@ -4,6 +4,7 @@ from urllib.parse import parse_qs
 
 # 🔼 All imports up top like a pro
 from models.user import create_user, login_user
+from views.user_view import handle_get_all_users  # ✅ ADD THIS
 from views.tagsView import (
     handle_create_tag,
     handle_get_tags,
@@ -17,7 +18,7 @@ from views.post import (
     handle_get_all_posts,
     handle_delete_post,
     handle_get_most_recent_post,
-    handle_get_posts_by_category
+    handle_get_posts_by_category,
 )
 
 from views.category import (
@@ -72,8 +73,15 @@ class RequestHandler(BaseHTTPRequestHandler):
         id = parsed["id"]
         query_params = parsed["query_params"]
 
+        # Special case route (not handled by parse_url)
         if self.path.rstrip("/") == "/posts/mostRecentPost":
             status, result = handle_get_most_recent_post()
+            self._send_response(status, result)
+
+            return  # ✅ prevent fallthrough to 404
+
+        if resource == "users":  # ✅ Admin-only user list
+            status, result = handle_get_all_users()
             self._send_response(status, result)
 
         elif resource == "tags":
@@ -89,6 +97,8 @@ class RequestHandler(BaseHTTPRequestHandler):
                 status, result = handle_get_comment_by_id(id)
             else:
                 status, result = handle_get_comments(resource, query_params)
+            self._send_response(status, result)
+
             self._send_response(status, result)
 
         elif resource == "posts":
@@ -179,6 +189,12 @@ class RequestHandler(BaseHTTPRequestHandler):
 
         elif resource == "categories" and id is not None:
             status, result = handle_update_category(id, data)
+            self._send_response(status, result)
+
+        elif resource == "users" and id is not None:
+            from views.user_view import handle_update_user
+
+            status, result = 204, handle_update_user(id, data)
             self._send_response(status, result)
 
         else:
