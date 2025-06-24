@@ -1,4 +1,3 @@
-
 import sqlite3
 from datetime import datetime
 
@@ -12,15 +11,16 @@ def create_post(body):
         db_cursor = conn.cursor()
         db_cursor.execute(
             """
-            INSERT INTO Posts (title, content, category_id, user_id, publication_date)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO Posts (title, content, category_id, user_id, publication_date, image_url)
+            VALUES (?, ?, ?, ?, ?, ?)
             """,
             (
                 body["title"],
                 body["content"],
                 body["category_id"],
                 body["user_id"],
-                datetime.now().isoformat()
+                datetime.now().isoformat(),
+                body["image_url"]
             ),
         )
         post_id = db_cursor.lastrowid
@@ -58,7 +58,7 @@ def get_all_posts():
             user = {
                 "id": row["user_id"],
                 "firstName": row["user_first_name"],
-                "lastName": row["user_last_name"]
+                "lastName": row["user_last_name"],
             }
             category = {
                 "id": row["category_id"],
@@ -80,6 +80,62 @@ def get_all_posts():
             posts.append(post)
 
         return posts
+import sqlite3
+
+def get_single_post(post_id):
+    with sqlite3.connect("./db.sqlite3") as conn:
+        conn.row_factory = sqlite3.Row
+        db_cursor = conn.cursor()
+        db_cursor.execute(
+            """
+            SELECT
+                p.id,
+                p.title,
+                p.content,
+                p.image_url,
+                p.publication_date,
+                p.user_id,
+                u.username,
+                u.first_name AS user_first_name,
+                u.last_name AS user_last_name,
+                c.id AS category_id,
+                c.label AS category_label
+            FROM Posts p
+            JOIN Users u ON p.user_id = u.id
+            JOIN Categories c ON p.category_id = c.id
+            WHERE p.id = ?
+            """,
+            (post_id,)
+        )
+
+        row = db_cursor.fetchone()
+
+        if row:
+            user = {
+                "id": row["user_id"],
+                "firstName": row["user_first_name"],
+                "lastName": row["user_last_name"]
+            }
+            category = {
+                "id": row["category_id"],
+                "label": row["category_label"],
+            }
+            post = {
+                "id": row["id"],
+                "title": row["title"],
+                "content": row["content"],
+                "image_url": row["image_url"],
+                "publication_date": row["publication_date"],
+                "user_id": row["user_id"],
+                "user": user,
+                "category_id": row["category_id"],
+                "category": category,
+                "author": row["username"],
+            }
+
+            return post
+        else:
+            return None
 
 
 def delete_post(post_id):
@@ -139,13 +195,11 @@ def get_most_recent_post():
         }
         return post
     
-
 def get_posts_by_category(category_id):
     with sqlite3.connect("./db.sqlite3") as conn:
         conn.row_factory = sqlite3.Row
         db_cursor = conn.cursor()
 
-        # Use a WHERE clause to filter by category_id
         db_cursor.execute(
             """
             SELECT
@@ -164,6 +218,7 @@ def get_posts_by_category(category_id):
             JOIN Users u ON p.user_id = u.id
             JOIN Categories c ON p.category_id = c.id
             WHERE p.category_id = ?
+            ORDER BY p.publication_date DESC
             """,
             (category_id,),
         )

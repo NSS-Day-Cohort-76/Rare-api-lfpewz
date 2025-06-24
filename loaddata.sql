@@ -122,3 +122,4 @@ INSERT INTO Categories ("label") VALUES
   ('Movies'),
   ('Gaming'),
   ('DIY');
+  

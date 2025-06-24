@@ -22,3 +22,4 @@ def handle_update_category(category_id, data):
         return (204, {})  # No Content
     else:
         return (404, {"error": "Category not found"})
+
