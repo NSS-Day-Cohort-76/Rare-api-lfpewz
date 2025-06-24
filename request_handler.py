@@ -177,6 +177,12 @@ class RequestHandler(BaseHTTPRequestHandler):
             status, result = handle_update_category(id, data)
             self._send_response(status, result)
 
+        elif resource == "users" and id is not None:
+            from views.user_view import handle_update_user
+
+            status, result = 204, handle_update_user(id, data)
+            self._send_response(status, result)
+
         else:
             self._send_response(404, {"error": "Route not handled"})
 
