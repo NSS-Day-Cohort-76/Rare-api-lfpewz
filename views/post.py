@@ -1,4 +1,4 @@
-from models.post import create_post, get_all_posts, delete_post, get_most_recent_post
+from models.post import create_post, get_all_posts, delete_post, get_most_recent_post, get_posts_by_category
 import sqlite3
 
 
@@ -95,3 +95,7 @@ def handle_get_most_recent_post():
         return 200, post
     else:
         return 404, {"error": "No posts found"}
+    
+
+def handle_get_posts_by_category(category_id):
+    return get_posts_by_category(category_id)

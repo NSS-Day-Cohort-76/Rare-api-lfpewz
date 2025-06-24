@@ -18,6 +18,7 @@ from views.post import (
     handle_get_all_posts,
     handle_delete_post,
     handle_get_most_recent_post,
+    handle_get_posts_by_category
 )
 
 from views.category import (
@@ -103,9 +104,17 @@ class RequestHandler(BaseHTTPRequestHandler):
                     self._send_response(200, post)
                 else:
                     self._send_response(404, {"error": "Post not found"})
+
+            elif "category_id" in query_params:
+                category_id = int(query_params["category_id"][0])
+                posts = handle_get_posts_by_category(category_id)
+                self._send_response(200, posts)
+
             else:
                 status, result = handle_get_all_posts()
                 self._send_response(status, result)
+
+           
 
         else:
             self._send_response(404, {"error": "Route not handled"})
