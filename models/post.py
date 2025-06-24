@@ -140,46 +140,54 @@ def delete_post(post_id):
         db_cursor = conn.cursor()
         db_cursor.execute("DELETE FROM Posts WHERE id = ?", (post_id,))
 
+def get_most_recent_post():
+    with sqlite3.connect("./db.sqlite3") as conn:
+        conn.row_factory = sqlite3.Row
+        db_cursor = conn.cursor()
+        db_cursor.execute(
+            """
+            SELECT
+                p.id,
+                p.title,
+                p.content,
+                p.image_url,
+                p.publication_date,
+                p.user_id,
+                u.username,
+                u.first_name AS user_first_name,
+                u.last_name AS user_last_name,
+                c.id AS category_id,
+                c.label AS category_label
+            FROM Posts p
+            JOIN Users u ON p.user_id = u.id
+            JOIN Categories c ON p.category_id = c.id
+            ORDER BY p.publication_date DESC
+            LIMIT 1
+            """
+        )
+        row = db_cursor.fetchone()
+        if row is None:
+            return None
 
-# def get_all_posts():
-#     with sqlite3.connect("./db.sqlite3") as conn:
-#         conn.row_factory = sqlite3.Row
-#         db_cursor = conn.cursor()
-
-#         db_cursor.execute(
-#             """
-#             SELECT
-#                 p.id,
-#                 p.category_id,
-#                 p.user_id,
-#                 c.label AS category_label,
-#                 u.first_name AS user_first_name,
-#                 u.last_name AS user_last_name
-#             FROM "Posts" p
-#             JOIN Category c ON c.id = p.category_id
-#             JOIN User u ON u.id = p.user_id
-#             """
-#         )
-
-#         query_results = db_cursor.fetchall()
-#         posts = []
-#         for row in query_results:
-#             category = {
-#                 "id": row["category_id"],
-#                 "label": row["category_label"],
-#             }
-#             user = {
-#                 "id": row["user_id"],
-#                 "first_name": row["user_first_name"],
-#                 "last_name": row["user_last_name"],
-#             }
-#             post = {
-#                 "id": row["id"],
-#                 "category_id": row["category_id"],
-#                 "category": category,
-#                 "user_id": row["user_id"],
-#                 "user": user,
-#                 # "created_at": row["created_at"] if row["created_at"] is not None else ""
-#             }
-#             posts.append(post)
-#     return posts
+        user = {
+            "id": row["user_id"],
+            "firstName": row["user_first_name"],
+            "lastName": row["user_last_name"]
+        }
+        category = {
+            "id": row["category_id"],
+            "label": row["category_label"],
+        }
+        post = {
+            "id": row["id"],
+            "title": row["title"],
+            "content": row["content"],
+            "image_url": row["image_url"],
+            "publication_date": row["publication_date"],
+            "user_id": row["user_id"],
+            "user": user,
+            "category_id": row["category_id"],
+            "category": category,
+            "author": row["username"],
+        }
+        return post
