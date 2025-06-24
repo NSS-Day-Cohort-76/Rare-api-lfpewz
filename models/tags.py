@@ -50,7 +50,20 @@ def delete_tag(tag_id):
 
 
 def update_tag(tag_id, label):
+    """
+    Updates the label of a tag in the Tags table.
+
+    Args:
+        tag_id (int): The ID of the tag to update.
+        label (str): The new label for the tag.
+
+    Returns:
+        bool: True if the tag was updated, False if not found.
+    """
     with sqlite3.connect("./db.sqlite3") as conn:
         db_cursor = conn.cursor()
-        db_cursor.execute("UPDATE Tags SET label = ? WHERE id = ?", (label, tag_id))
+        db_cursor.execute(
+            "UPDATE Tags SET label = ? WHERE id = ?",
+            (label, tag_id),
+        )
         return db_cursor.rowcount > 0  # True if a row was updated

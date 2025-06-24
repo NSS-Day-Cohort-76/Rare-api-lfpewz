@@ -87,11 +87,9 @@ class RequestHandler(BaseHTTPRequestHandler):
         elif resource == "tags":
             status, result = handle_get_tags()
             self._send_response(status, result)
-
         elif resource == "categories":
             status, result = handle_get_all_categories()
             self._send_response(status, result)
-
         elif resource == "comments":
             if id is not None:
                 status, result = handle_get_comment_by_id(id)
@@ -120,7 +118,16 @@ class RequestHandler(BaseHTTPRequestHandler):
             else:
                 status, result = handle_get_all_posts()
                 self._send_response(status, result)
-
+        elif resource == "posts":
+            if id is not None:
+                post = handle_get_post(id)
+                if post:
+                    self._send_response(200, post)
+                else:
+                    self._send_response(404, {"error": "Post not found"})
+            else:
+                status, result = handle_get_all_posts()
+                self._send_response(status, result)
         else:
             self._send_response(404, {"error": "Route not handled"})
 
