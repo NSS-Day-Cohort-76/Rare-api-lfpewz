@@ -1,4 +1,4 @@
-from models.post import create_post, get_all_posts, delete_post, get_most_recent_post, get_posts_by_category
+from models.post import create_post, get_all_posts, delete_post, get_most_recent_post, get_posts_by_category, get_single_post
 import sqlite3
 
 
@@ -25,6 +25,12 @@ def handle_get_all_posts():
     return (200, posts)
 
 
+# // USE THIS HANDLER TO GRAB A SINGLE POST BY ID WITH JOINED USER AND CATEGORY DATA FOR DISPLAY
+# def handle_get_single_post(post_id):
+#     post = get_single_post(post_id)
+#     return (200, post)
+
+
 def handle_get_post(post_id):
     with sqlite3.connect("./db.sqlite3") as conn:
         conn.row_factory = sqlite3.Row
@@ -42,6 +48,7 @@ def handle_get_post(post_id):
                 u.username
             FROM Posts p
             JOIN Users u ON p.user_id = u.id
+            JOIN Categories c ON p.category_id = c.id
             WHERE p.id = ?
         """,
             (post_id,),
