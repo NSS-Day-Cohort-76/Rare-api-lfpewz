@@ -122,10 +122,10 @@ class RequestHandler(BaseHTTPRequestHandler):
                     except ValueError:
                         self._send_response(400, {"error": "Invalid token format"})
                 else:
-                    self._send_response(
-                        401, {"error": "Missing or invalid Authorization header"}
-                    )
-
+                    self._send_response(404, {"error": "Post not found"})
+            else:
+                status, result = handle_get_all_posts()
+                self._send_response(status, result)
         else:
             self._send_response(404, {"error": "Route not handled"})
 

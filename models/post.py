@@ -251,14 +251,14 @@ def get_posts_by_category(category_id):
             (category_id,),
         )
 
-        posts = []
+        category_posts = []
         dataset = db_cursor.fetchall()
 
         for row in dataset:
             user = {
                 "id": row["user_id"],
                 "firstName": row["user_first_name"],
-                "lastName": row["user_last_name"],
+                "lastName": row["user_last_name"]
             }
             category = {
                 "id": row["category_id"],
@@ -277,6 +277,6 @@ def get_posts_by_category(category_id):
                 "author": row["username"],
             }
 
-            posts.append(post)
+            category_posts.append(post)
 
-        return posts
+        return category_posts
