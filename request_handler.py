@@ -96,6 +96,8 @@ class RequestHandler(BaseHTTPRequestHandler):
             self._send_response(status, result)
 
         elif resource == "posts":
+            print(f"🔍 Handling GET /posts | auth: {self.headers.get('Authorization')}")
+
             if id is not None:
                 post = handle_get_post(id)
                 if post:
@@ -118,14 +120,11 @@ class RequestHandler(BaseHTTPRequestHandler):
                         user_id = int(auth_header.split(" ")[1])
                         status, result = handle_get_all_posts(user_id)
                         self._send_response(status, result)
-
                     except ValueError:
                         self._send_response(400, {"error": "Invalid token format"})
                 else:
-                    self._send_response(404, {"error": "Post not found"})
-            else:
-                status, result = handle_get_all_posts()
-                self._send_response(status, result)
+                    self._send_response(401, {"error": "Authorization required"})
+
         else:
             self._send_response(404, {"error": "Route not handled"})
 
