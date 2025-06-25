@@ -11,9 +11,11 @@ CREATE TABLE "Users" (
   "active" bit
 );
 
-ALTER TABLE Users ADD COLUMN isStaff BOOLEAN DEFAULT 1;
+ALTER TABLE Users DELETE COLUMN isStaff BOOLEAN DEFAULT 1
 
-UPDATE Users SET isStaff = 1;
+
+ALTER TABLE Users ADD COLUMN is_staff BOOLEAN DEFAULT 1;
+UPDATE Users SET is_staff = 1;
 
 CREATE TABLE "DemotionQueue" (
   "action" varchar,
@@ -93,7 +95,19 @@ ALTER TABLE Comments ADD COLUMN created_on DATE;
 
 INSERT INTO Categories ('label') VALUES ('News');
 INSERT INTO Tags ('label') VALUES ('JavaScript');
-INSERT INTO Reactions ('label', 'image_url') VALUES ('happy', 'https://pngtree.com/so/happy');
+INSERT INTO Reactions (label, image_url) VALUES
+  ('like', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f44d.png'),
+  ('laugh', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f602.png'),
+  ('fire', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f525.png'),
+  ('wow', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f62e.png');
+
+
+
+
+TRUNCATE TABLE Reactions;
+
+DELETE FROM Reactions
+WHERE label = 'wow';
 
 INSERT INTO Users (
   "first_name", "last_name", "email", "bio", "username", "password", "profile_image_url", "created_on", "active"

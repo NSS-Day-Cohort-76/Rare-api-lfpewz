@@ -80,6 +80,7 @@ def get_all_posts():
             posts.append(post)
 
         return posts
+    
 import sqlite3
 
 def get_single_post(post_id):
