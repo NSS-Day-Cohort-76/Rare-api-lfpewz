@@ -1,10 +1,10 @@
 from http.server import BaseHTTPRequestHandler
 import json
+import sqlite3
 from urllib.parse import parse_qs
 
-# 🔼 All imports up top like a pro
 from models.user import create_user, login_user
-from views.user_view import handle_get_all_users  # ✅ ADD THIS
+from views.user_view import handle_get_all_users, handle_update_user
 from views.tagsView import (
     handle_create_tag,
     handle_get_tags,
@@ -19,15 +19,14 @@ from views.post import (
     handle_delete_post,
     handle_get_most_recent_post,
     handle_get_posts_by_category,
+    handle_approve_post,
 )
-
 from views.category import (
     handle_get_all_categories,
     handle_create_category,
     handle_delete_category,
     handle_update_category,
 )
-
 from views.comment_view import (
     handle_get_comments,
     handle_create_comment,
@@ -35,10 +34,10 @@ from views.comment_view import (
     handle_delete_comment,
     handle_get_comment_by_id,
 )
+from models.post import get_all_posts
 
 
 class RequestHandler(BaseHTTPRequestHandler):
-
     def parse_url(self, path):
         path_parts = path.strip("/").split("?")
         resource_path = path_parts[0].split("/")
@@ -66,37 +65,34 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
         self.end_headers()
 
-
     def do_GET(self):
         parsed = self.parse_url(self.path)
         resource = parsed["resource"]
         id = parsed["id"]
         query_params = parsed["query_params"]
 
-        # Special case route (not handled by parse_url)
         if self.path.rstrip("/") == "/posts/mostRecentPost":
             status, result = handle_get_most_recent_post()
             self._send_response(status, result)
+            return
 
-            return  # ✅ prevent fallthrough to 404
-
-        if resource == "users":  # ✅ Admin-only user list
+        if resource == "users":
             status, result = handle_get_all_users()
             self._send_response(status, result)
 
         elif resource == "tags":
             status, result = handle_get_tags()
             self._send_response(status, result)
+
         elif resource == "categories":
             status, result = handle_get_all_categories()
             self._send_response(status, result)
+
         elif resource == "comments":
             if id is not None:
                 status, result = handle_get_comment_by_id(id)
             else:
                 status, result = handle_get_comments(resource, query_params)
-            self._send_response(status, result)
-
             self._send_response(status, result)
 
         elif resource == "posts":
@@ -116,18 +112,20 @@ class RequestHandler(BaseHTTPRequestHandler):
                     self._send_response(400, {"error": "Invalid category_id"})
 
             else:
-                status, result = handle_get_all_posts()
-                self._send_response(status, result)
-        elif resource == "posts":
-            if id is not None:
-                post = handle_get_post(id)
-                if post:
-                    self._send_response(200, post)
+                auth_header = self.headers.get("Authorization")
+                if auth_header and auth_header.startswith("Token "):
+                    try:
+                        user_id = int(auth_header.split(" ")[1])
+                        status, result = handle_get_all_posts(user_id)
+                        self._send_response(status, result)
+
+                    except ValueError:
+                        self._send_response(400, {"error": "Invalid token format"})
                 else:
-                    self._send_response(404, {"error": "Post not found"})
-            else:
-                status, result = handle_get_all_posts()
-                self._send_response(status, result)
+                    self._send_response(
+                        401, {"error": "Missing or invalid Authorization header"}
+                    )
+
         else:
             self._send_response(404, {"error": "Route not handled"})
 
@@ -182,7 +180,11 @@ class RequestHandler(BaseHTTPRequestHandler):
         resource = parsed["resource"]
         id = parsed["id"]
 
-        if resource == "posts" and id is not None:
+        if resource == "posts" and id is not None and "approved" in data:
+            status, result = handle_approve_post(id, data)
+            self._send_response(status, result)
+
+        elif resource == "posts" and id is not None:
             handle_update_post(id, data)
             self._send_response(204, {})
 
@@ -199,8 +201,6 @@ class RequestHandler(BaseHTTPRequestHandler):
             self._send_response(status, result)
 
         elif resource == "users" and id is not None:
-            from views.user_view import handle_update_user
-
             status, result = 204, handle_update_user(id, data)
             self._send_response(status, result)
 
@@ -241,7 +241,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                 {
                     "valid": True,
                     "user_id": result["id"],
-                    "isStaff": result.get("isStaff", 1),
+                    "is_staff": result.get("is_staff", 1),
                 },
             )
 

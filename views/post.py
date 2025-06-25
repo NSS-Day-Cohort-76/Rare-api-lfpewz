@@ -1,6 +1,12 @@
-from models.post import create_post, get_all_posts, delete_post, get_most_recent_post, get_posts_by_category, get_single_post
+from models.post import (
+    create_post,
+    get_all_posts,
+    delete_post,
+    get_most_recent_post,
+    get_posts_by_category,
+    get_single_post,
+)
 import sqlite3
-
 
 
 def handle_create_post(body):
@@ -20,8 +26,8 @@ def handle_create_post(body):
     return (201, result)
 
 
-def handle_get_all_posts():
-    posts = get_all_posts()
+def handle_get_all_posts(user_id):
+    posts = get_all_posts(user_id)
     return (200, posts)
 
 
@@ -96,13 +102,26 @@ def handle_delete_post(post_id):
     delete_post(post_id)
     return (204, "")
 
+
 def handle_get_most_recent_post():
     post = get_most_recent_post()
     if post:
         return 200, post
     else:
         return 404, {"error": "No posts found"}
-    
+
+
 def handle_get_posts_by_category(category_id):
     posts = get_posts_by_category(category_id)
     return (200, posts)
+
+
+def handle_approve_post(post_id, data):
+    from models.post import approve_post
+
+    approved_value = data.get("approved")
+    if approved_value is None:
+        return 400, {"error": "Missing approved value"}
+
+    approve_post(post_id, approved_value)
+    return 204, {}

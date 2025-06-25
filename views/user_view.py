@@ -8,9 +8,6 @@ def handle_get_all_users():
     return 200, sorted_users
 
 
-import sqlite3
-
-
 def handle_update_user(id, user_data):
     print("🔁 Incoming user update payload:", user_data)
 
@@ -23,7 +20,7 @@ def handle_update_user(id, user_data):
         db_cursor.execute(
             """
             UPDATE Users
-            SET active = ?, isStaff = ?
+            SET active = ?, is_staff = ?
             WHERE id = ?
             """,
             (active, is_staff, id),

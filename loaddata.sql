@@ -1,3 +1,4 @@
+-- Create Users table
 CREATE TABLE "Users" (
   "id" INTEGER PRIMARY KEY AUTOINCREMENT,
   "first_name" varchar,
@@ -8,13 +9,14 @@ CREATE TABLE "Users" (
   "password" varchar,
   "profile_image_url" varchar,
   "created_on" date,
-  "active" bit
+  "active" bit,
+  "is_staff" INTEGER DEFAULT 0
 );
 
-ALTER TABLE Users ADD COLUMN isStaff BOOLEAN DEFAULT 1;
+-- Promote the first user to admin
+UPDATE Users SET is_staff = 1 WHERE id = 1;
 
-UPDATE Users SET isStaff = 1;
-
+-- Create all other tables
 CREATE TABLE "DemotionQueue" (
   "action" varchar,
   "admin_id" INTEGER,
@@ -23,7 +25,6 @@ CREATE TABLE "DemotionQueue" (
   FOREIGN KEY(`approver_one_id`) REFERENCES `Users`(`id`),
   PRIMARY KEY (action, admin_id, approver_one_id)
 );
-
 
 CREATE TABLE "Subscriptions" (
   "id" INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -51,6 +52,7 @@ CREATE TABLE "Comments" (
   "post_id" INTEGER,
   "author_id" INTEGER,
   "content" varchar,
+  "created_on" date,
   FOREIGN KEY(`post_id`) REFERENCES `Posts`(`id`),
   FOREIGN KEY(`author_id`) REFERENCES `Users`(`id`)
 );
@@ -89,18 +91,19 @@ CREATE TABLE "Categories" (
   "label" varchar
 );
 
-ALTER TABLE Comments ADD COLUMN created_on DATE;
+-- Seed some starter data
+INSERT INTO Categories ("label") VALUES ('News');
+INSERT INTO Tags ("label") VALUES ('JavaScript');
+INSERT INTO Reactions ("label", "image_url") VALUES ('happy', 'https://pngtree.com/so/happy');
 
-INSERT INTO Categories ('label') VALUES ('News');
-INSERT INTO Tags ('label') VALUES ('JavaScript');
-INSERT INTO Reactions ('label', 'image_url') VALUES ('happy', 'https://pngtree.com/so/happy');
-
+-- Create first admin user
 INSERT INTO Users (
   "first_name", "last_name", "email", "bio", "username", "password", "profile_image_url", "created_on", "active"
 ) VALUES (
   'John', 'Doe', 'john.doe@email.com', 'Sample bio', 'johndoe', 'password123', 'http://example.com/image.jpg', '2025-06-16', 1
 );
 
+-- Add more categories
 INSERT INTO Categories ("label") VALUES
   ('Science'),
   ('Technology'),
@@ -122,4 +125,5 @@ INSERT INTO Categories ("label") VALUES
   ('Movies'),
   ('Gaming'),
   ('DIY');
-  
+
+ALTER TABLE Comments ADD COLUMN subject TEXT;
