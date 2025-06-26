@@ -1,6 +1,5 @@
 from http.server import BaseHTTPRequestHandler
 import json
-import sqlite3
 from urllib.parse import parse_qs
 
 from models.user import create_user, login_user
@@ -34,10 +33,10 @@ from views.comment_view import (
     handle_delete_comment,
     handle_get_comment_by_id,
 )
-from models.post import get_all_posts
 
 
 class RequestHandler(BaseHTTPRequestHandler):
+
     def parse_url(self, path):
         path_parts = path.strip("/").split("?")
         resource_path = path_parts[0].split("/")
@@ -96,23 +95,10 @@ class RequestHandler(BaseHTTPRequestHandler):
             self._send_response(status, result)
 
         elif resource == "posts":
-            print(f"🔍 Handling GET /posts | auth: {self.headers.get('Authorization')}")
-
             if id is not None:
-                post = handle_get_post(id)
-                if post:
-                    self._send_response(200, post)
-                else:
-                    self._send_response(404, {"error": "Post not found"})
-
-            elif "category_id" in query_params:
-                try:
-                    category_id = int(query_params["category_id"][0])
-                    status, result = handle_get_posts_by_category(category_id)
-                    self._send_response(status, result)
-                except ValueError:
-                    self._send_response(400, {"error": "Invalid category_id"})
-
+                # ✅ THIS IS THE FIX: handles GET /posts/13
+                status, result = handle_get_post(id)
+                self._send_response(status, result)
             else:
                 auth_header = self.headers.get("Authorization")
                 if auth_header and auth_header.startswith("Token "):
@@ -123,7 +109,9 @@ class RequestHandler(BaseHTTPRequestHandler):
                     except ValueError:
                         self._send_response(400, {"error": "Invalid token format"})
                 else:
-                    self._send_response(401, {"error": "Authorization required"})
+                    self._send_response(
+                        401, {"error": "Missing or invalid Authorization header"}
+                    )
 
         else:
             self._send_response(404, {"error": "Route not handled"})
@@ -149,21 +137,20 @@ class RequestHandler(BaseHTTPRequestHandler):
                 try:
                     user_id = int(auth_header.split(" ")[1])
                     body["user_id"] = user_id
-                except (IndexError, ValueError):
-                    return self._send_response(400, {"error": "Invalid token format"})
+                    status, result = handle_create_post(body)
+                    self._send_response(status, result)
+                except ValueError:
+                    self._send_response(400, {"error": "Invalid token format"})
             else:
-                return self._send_response(
-                    401, {"error": "Authorization header missing or malformed"}
+                self._send_response(
+                    401, {"error": "Missing or invalid Authorization header"}
                 )
-
-            status, result = handle_create_post(body)
-            self._send_response(status, result)
 
         elif self.path == "/comments":
             status, result = handle_create_comment(body)
             self._send_response(status, result)
 
-        elif self.path == "/categories" and self.command == "POST":
+        elif self.path == "/categories":
             status, result = handle_create_category(body)
             self._send_response(status, result)
 
@@ -179,13 +166,13 @@ class RequestHandler(BaseHTTPRequestHandler):
         resource = parsed["resource"]
         id = parsed["id"]
 
-        if resource == "posts" and id is not None and "approved" in data:
-            status, result = handle_approve_post(id, data)
-            self._send_response(status, result)
-
-        elif resource == "posts" and id is not None:
-            handle_update_post(id, data)
-            self._send_response(204, {})
+        if resource == "posts" and id is not None:
+            if "approved" in data:
+                status, result = handle_approve_post(id, data)
+                self._send_response(status, result)
+            else:
+                handle_update_post(id, data)
+                self._send_response(204, {})
 
         elif resource == "tags" and id is not None:
             status, result = handle_update_tag(id, data)
@@ -240,7 +227,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                 {
                     "valid": True,
                     "user_id": result["id"],
-                    "is_staff": result.get("is_staff", 1),
+                    "isStaff": result.get("isStaff", 1),
                 },
             )
 

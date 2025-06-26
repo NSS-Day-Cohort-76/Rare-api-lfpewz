@@ -6,40 +6,34 @@ def create_post(body):
     required_fields = ["title", "content", "category_id", "user_id"]
     for field in required_fields:
         if field not in body:
-            return 400, {"error": f"Missing field: {field}"}
+            raise ValueError(f"Missing required field: {field}")
 
-    # 🧠 Look up is_staff
+    user_id = body["user_id"]
     with sqlite3.connect("./db.sqlite3") as conn:
         db_cursor = conn.cursor()
-        db_cursor.execute("SELECT is_staff FROM Users WHERE id = ?", (body["user_id"],))
-        row = db_cursor.fetchone()
-        is_staff = row[0] if row else 0
+        db_cursor.execute("SELECT is_staff FROM Users WHERE id = ?", (user_id,))
+        user = db_cursor.fetchone()
+        is_staff = user[0] if user else 0
 
-    approved = 1 if is_staff else 0
+        approved = 1 if is_staff else 0
 
-    # 💾 Insert post with approved status
-    with sqlite3.connect("./db.sqlite3") as conn:
-        db_cursor = conn.cursor()
         db_cursor.execute(
             """
-            INSERT INTO Posts (
-                title, content, category_id, user_id, publication_date, image_url, approved
-            )
+            INSERT INTO Posts (user_id, category_id, title, content, image_url, publication_date, approved)
             VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
             (
+                user_id,
+                body["category_id"],
                 body["title"],
                 body["content"],
-                body["category_id"],
-                body["user_id"],
+                body.get("image_url", ""),
                 datetime.now().isoformat(),
-                body.get("image_url", ""),  # fallback if missing
                 approved,
             ),
         )
         post_id = db_cursor.lastrowid
-
-    return 201, {"id": post_id, "message": "Post created"}
+        return post_id
 
 
 def get_all_posts(requesting_user_id):
@@ -47,14 +41,12 @@ def get_all_posts(requesting_user_id):
         conn.row_factory = sqlite3.Row
         db_cursor = conn.cursor()
 
-        # Step 1: Get the user's is_staff value
         db_cursor.execute(
             "SELECT is_staff FROM Users WHERE id = ?", (requesting_user_id,)
         )
         row = db_cursor.fetchone()
         is_staff = row[0] if row else 0
 
-        # Step 2: Build base query
         query = """
             SELECT
                 p.id, p.title, p.content, p.image_url, p.publication_date,
@@ -66,11 +58,12 @@ def get_all_posts(requesting_user_id):
             JOIN Categories c ON p.category_id = c.id
         """
 
-        # Step 3: Add filter if not staff
         if not is_staff:
-            query += " WHERE p.approved = 1"
+            query += " WHERE p.approved = 1 OR p.user_id = ?"
+            db_cursor.execute(query, (requesting_user_id,))
+        else:
+            db_cursor.execute(query)
 
-        db_cursor.execute(query)
         dataset = db_cursor.fetchall()
 
         posts = []
@@ -113,6 +106,7 @@ def get_single_post(post_id):
                 p.image_url,
                 p.publication_date,
                 p.user_id,
+                p.approved,
                 u.username,
                 u.first_name AS user_first_name,
                 u.last_name AS user_last_name,
@@ -145,6 +139,7 @@ def get_single_post(post_id):
                 "image_url": row["image_url"],
                 "publication_date": row["publication_date"],
                 "user_id": row["user_id"],
+                "approved": row["approved"],
                 "user": user,
                 "category_id": row["category_id"],
                 "category": category,
@@ -183,6 +178,7 @@ def get_most_recent_post():
                 p.image_url,
                 p.publication_date,
                 p.user_id,
+                p.approved,
                 u.username,
                 u.first_name AS user_first_name,
                 u.last_name AS user_last_name,
@@ -215,6 +211,7 @@ def get_most_recent_post():
             "image_url": row["image_url"],
             "publication_date": row["publication_date"],
             "user_id": row["user_id"],
+            "approved": row["approved"],
             "user": user,
             "category_id": row["category_id"],
             "category": category,
@@ -237,6 +234,7 @@ def get_posts_by_category(category_id):
                 p.image_url,
                 p.publication_date,
                 p.user_id,
+                p.approved,
                 u.username,
                 u.first_name AS user_first_name,
                 u.last_name AS user_last_name,
@@ -258,7 +256,7 @@ def get_posts_by_category(category_id):
             user = {
                 "id": row["user_id"],
                 "firstName": row["user_first_name"],
-                "lastName": row["user_last_name"]
+                "lastName": row["user_last_name"],
             }
             category = {
                 "id": row["category_id"],
@@ -271,6 +269,7 @@ def get_posts_by_category(category_id):
                 "image_url": row["image_url"],
                 "publication_date": row["publication_date"],
                 "user_id": row["user_id"],
+                "approved": row["approved"],
                 "user": user,
                 "category_id": row["category_id"],
                 "category": category,

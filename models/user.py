@@ -42,7 +42,7 @@ def login_user(user):
                 "valid": True,
                 "user_id": user_id,
                 "is_staff": is_staff,
-                "token": f"rare_token_user_{user_id}",
+                "token": str(user_id),
             }
 
         return {"valid": False}

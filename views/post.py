@@ -5,8 +5,8 @@ from models.post import (
     get_most_recent_post,
     get_posts_by_category,
     get_single_post,
+    approve_post,
 )
-
 import sqlite3
 
 
@@ -39,62 +39,40 @@ def handle_get_all_posts(user_id):
 
 
 def handle_get_post(post_id):
-    with sqlite3.connect("./db.sqlite3") as conn:
-        conn.row_factory = sqlite3.Row
-        db_cursor = conn.cursor()
-
-        db_cursor.execute(
-            """
-            SELECT
-                p.id,
-                p.title,
-                p.content,
-                p.image_url,
-                p.publication_date,
-                p.user_id,
-                u.username
-            FROM Posts p
-            JOIN Users u ON p.user_id = u.id
-            JOIN Categories c ON p.category_id = c.id
-            WHERE p.id = ?
-        """,
-            (post_id,),
-        )
-
-        row = db_cursor.fetchone()
-
-        if row:
-            return {
-                "id": row["id"],
-                "title": row["title"],
-                "content": row["content"],
-                "image_url": row["image_url"],
-                "publication_date": row["publication_date"],
-                "user_id": row["user_id"],
-                "author": row["username"],
-            }
-        else:
-            return None
+    post = get_single_post(post_id)
+    if post:
+        return 200, post
+    return 404, {"error": "Post not found"}
 
 
 def handle_update_post(post_id, updated_data):
     with sqlite3.connect("./db.sqlite3") as conn:
         db_cursor = conn.cursor()
 
-        db_cursor.execute(
-            """
-            UPDATE Posts
-            SET title = ?, content = ?, category_id = ?, image_url = ?
-            WHERE id = ?
-        """,
-            (
-                updated_data.get("title", ""),
-                updated_data.get("content", ""),
-                updated_data.get("category_id", 1),  # fallback to category 1 if missing
-                updated_data.get("image_url", ""),
-                post_id,
-            ),
-        )
+        if "approved" in updated_data:
+            db_cursor.execute(
+                """
+                UPDATE Posts
+                SET approved = ?
+                WHERE id = ?
+                """,
+                (updated_data["approved"], post_id),
+            )
+        else:
+            db_cursor.execute(
+                """
+                UPDATE Posts
+                SET title = ?, content = ?, category_id = ?, image_url = ?
+                WHERE id = ?
+                """,
+                (
+                    updated_data.get("title", ""),
+                    updated_data.get("content", ""),
+                    updated_data.get("category_id", 1),
+                    updated_data.get("image_url", ""),
+                    post_id,
+                ),
+            )
 
     return True
 
@@ -118,11 +96,9 @@ def handle_get_posts_by_category(category_id):
 
 
 def handle_approve_post(post_id, data):
-    from models.post import approve_post
-
+    # data should be a dict with an "approved" key: 1 (approve), 0 (pending), -1 (deny)
     approved_value = data.get("approved")
-    if approved_value is None:
-        return 400, {"error": "Missing approved value"}
-
+    if approved_value not in [-1, 0, 1]:
+        return 400, {"error": "Invalid approval value"}
     approve_post(post_id, approved_value)
     return 204, {}
