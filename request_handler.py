@@ -114,8 +114,6 @@ class RequestHandler(BaseHTTPRequestHandler):
 
             self._send_response(status, result)
 
-
-        
         elif resource == "comments":
             if id is not None:
                 status, result = handle_get_comment_by_id(id)
@@ -144,24 +142,6 @@ class RequestHandler(BaseHTTPRequestHandler):
             else:
                 status, result = handle_get_all_posts()
                 self._send_response(status, result)
-        elif resource == "posts":
-            if id is not None:
-                post = handle_get_post(id)
-                if post:
-                    self._send_response(200, post)
-                else:
-                    self._send_response(404, {"error": "Post not found"})
-
-            elif "category_id" in query_params:
-                category_id = int(query_params["category_id"][0])
-                posts = handle_get_posts_by_category(category_id)
-                self._send_response(200, posts)
-
-            else:
-                status, result = handle_get_all_posts()
-                self._send_response(status, result)
-        else:
-            self._send_response(404, {"error": "Route not handled"})
 
     def do_POST(self):
         content_length = int(self.headers["Content-Length"])
