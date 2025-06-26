@@ -34,6 +34,14 @@ from views.comment_view import (
     handle_get_comment_by_id,
 )
 
+from views.reaction import handle_get_all_reactions
+
+from views.post_reaction import (
+    handle_get_post_reaction,
+    handle_update_post_reaction,
+    handle_add_post_reaction,
+)
+
 
 class RequestHandler(BaseHTTPRequestHandler):
 
@@ -87,6 +95,21 @@ class RequestHandler(BaseHTTPRequestHandler):
             status, result = handle_get_all_categories()
             self._send_response(status, result)
 
+        elif resource == "reactions":
+            status, result = handle_get_all_reactions()
+            self._send_response(status, result)
+
+        elif resource == "postreactions":
+            user_id = query_params.get("user_id", [None])[0]
+            post_id = query_params.get("post_id", [None])[0]
+
+            if user_id and post_id:
+                status, result = handle_get_post_reaction(user_id, post_id)
+            else:
+                status, result = 400, {"error": "Missing user_id or post_id"}
+
+            self._send_response(status, result)
+
         elif resource == "comments":
             if id is not None:
                 status, result = handle_get_comment_by_id(id)
@@ -96,7 +119,7 @@ class RequestHandler(BaseHTTPRequestHandler):
 
         elif resource == "posts":
             if id is not None:
-                # ✅ THIS IS THE FIX: handles GET /posts/13
+                # Handles GET /posts/13
                 status, result = handle_get_post(id)
                 self._send_response(status, result)
             else:
@@ -154,6 +177,10 @@ class RequestHandler(BaseHTTPRequestHandler):
             status, result = handle_create_category(body)
             self._send_response(status, result)
 
+        elif self.path == "/postreactions" and self.command == "POST":
+            status, result = handle_add_post_reaction(body)
+            self._send_response(status, result)
+
         else:
             self._send_response(404, {"error": "Route not handled"})
 
@@ -184,6 +211,10 @@ class RequestHandler(BaseHTTPRequestHandler):
 
         elif resource == "categories" and id is not None:
             status, result = handle_update_category(id, data)
+            self._send_response(status, result)
+
+        elif resource == "postreactions" and id is not None:
+            status, result = handle_update_post_reaction(id, data)
             self._send_response(status, result)
 
         elif resource == "users" and id is not None:
