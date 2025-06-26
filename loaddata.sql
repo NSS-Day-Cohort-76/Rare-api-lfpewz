@@ -101,8 +101,17 @@ INSERT INTO Reactions (label, image_url) VALUES
   ('fire', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f525.png'),
   ('wow', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f62e.png');
 
+INSERT INTO Reactions (label, image_url) VALUES
+  ('like', '/images/+1.png'),
+  ('laugh', '/images/rolling_on_the_floor_laughing.png'),
+  ('fire', '/images/fire.png'),
+  ('wow', '/images/open_mouth.png');
 
-
+INSERT INTO Reactions (label, image_url) VALUES
+  ('like', '/images/thumbs_up.png'),
+  ('laugh', '/images/rolling_on_the_floor_laughing.png'),
+  ('fire', '/images/fire.png'),
+  ('wow', '/images/open_mouth.png');
 
 TRUNCATE TABLE Reactions;
 
