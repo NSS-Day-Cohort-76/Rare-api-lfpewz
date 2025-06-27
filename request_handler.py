@@ -122,6 +122,15 @@ class RequestHandler(BaseHTTPRequestHandler):
                 # Handles GET /posts/13
                 status, result = handle_get_post(id)
                 self._send_response(status, result)
+
+            elif "category_id" in query_params:
+                try:
+                    category_id = int(query_params["category_id"][0])
+                    status, result = handle_get_posts_by_category(category_id)
+                    self._send_response(status, result)
+                except (ValueError, KeyError):
+                    self._send_response(400, {"error": "Invalid or missing category_id"})
+
             else:
                 auth_header = self.headers.get("Authorization")
                 if auth_header and auth_header.startswith("Token "):
@@ -135,6 +144,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                     self._send_response(
                         401, {"error": "Missing or invalid Authorization header"}
                     )
+
 
         else:
             self._send_response(404, {"error": "Route not handled"})
