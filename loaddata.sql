@@ -110,7 +110,23 @@ INSERT INTO Reactions ("label", "image_url") VALUES
   ('fire', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f525.png'),
   ('wow', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f62e.png');
 
--- Create first admin user
+INSERT INTO Reactions (label, image_url) VALUES
+  ('like', '/images/+1.png'),
+  ('laugh', '/images/rolling_on_the_floor_laughing.png'),
+  ('fire', '/images/fire.png'),
+  ('wow', '/images/open_mouth.png');
+
+INSERT INTO Reactions (label, image_url) VALUES
+  ('like', '/images/thumbs_up.png'),
+  ('laugh', '/images/rolling_on_the_floor_laughing.png'),
+  ('fire', '/images/fire.png'),
+  ('wow', '/images/open_mouth.png');
+
+TRUNCATE TABLE Reactions;
+
+DELETE FROM Reactions
+WHERE label = 'wow';
+
 INSERT INTO Users (
   "first_name", "last_name", "email", "bio", "username", "password", "profile_image_url", "created_on", "active"
 ) VALUES (
@@ -139,3 +155,12 @@ INSERT INTO Categories ("label") VALUES
   ('Movies'),
   ('Gaming'),
   ('DIY');
+
+
+ALTER TABLE Users RENAME COLUMN isStaff TO is_staff;
+
+ALTER TABLE Users ADD COLUMN is_staff INTEGER;
+
+UPDATE Users SET is_staff = 1;
+
+ALTER TABLE Users ALTER COLUMN is_staff SET DEFAULT 1;
