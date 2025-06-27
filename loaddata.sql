@@ -1,4 +1,5 @@
-CREATE TABLE "Users" (
+-- Create Users table
+CREATE TABLE IF NOT EXISTS "Users" (
   "id" INTEGER PRIMARY KEY AUTOINCREMENT,
   "first_name" varchar,
   "last_name" varchar,
@@ -8,16 +9,15 @@ CREATE TABLE "Users" (
   "password" varchar,
   "profile_image_url" varchar,
   "created_on" date,
-  "active" bit
+  "active" bit,
+  "is_staff" INTEGER DEFAULT 0
 );
 
-ALTER TABLE Users DELETE COLUMN isStaff BOOLEAN DEFAULT 1
+-- Promote the first user to admin
+UPDATE Users SET is_staff = 1 WHERE id = 1;
 
-
-ALTER TABLE Users ADD COLUMN is_staff BOOLEAN DEFAULT 1;
-UPDATE Users SET is_staff = 1;
-
-CREATE TABLE "DemotionQueue" (
+-- Create DemotionQueue table
+CREATE TABLE IF NOT EXISTS "DemotionQueue" (
   "action" varchar,
   "admin_id" INTEGER,
   "approver_one_id" INTEGER,
@@ -26,8 +26,8 @@ CREATE TABLE "DemotionQueue" (
   PRIMARY KEY (action, admin_id, approver_one_id)
 );
 
-
-CREATE TABLE "Subscriptions" (
+-- Create Subscriptions table
+CREATE TABLE IF NOT EXISTS "Subscriptions" (
   "id" INTEGER PRIMARY KEY AUTOINCREMENT,
   "follower_id" INTEGER,
   "author_id" INTEGER,
@@ -36,7 +36,8 @@ CREATE TABLE "Subscriptions" (
   FOREIGN KEY(`author_id`) REFERENCES `Users`(`id`)
 );
 
-CREATE TABLE "Posts" (
+-- Create Posts table
+CREATE TABLE IF NOT EXISTS "Posts" (
   "id" INTEGER PRIMARY KEY AUTOINCREMENT,
   "user_id" INTEGER,
   "category_id" INTEGER,
@@ -44,26 +45,32 @@ CREATE TABLE "Posts" (
   "publication_date" date,
   "image_url" varchar,
   "content" varchar,
-  "approved" bit,
+  -- approved: -1 = rejected, 0 = pending, 1 = approved
+  "approved" INTEGER DEFAULT 0,
   FOREIGN KEY(`user_id`) REFERENCES `Users`(`id`)
 );
 
-CREATE TABLE "Comments" (
+-- Create Comments table
+CREATE TABLE IF NOT EXISTS "Comments" (
   "id" INTEGER PRIMARY KEY AUTOINCREMENT,
   "post_id" INTEGER,
   "author_id" INTEGER,
   "content" varchar,
+  "created_on" date,
+  "subject" TEXT,
   FOREIGN KEY(`post_id`) REFERENCES `Posts`(`id`),
   FOREIGN KEY(`author_id`) REFERENCES `Users`(`id`)
 );
 
-CREATE TABLE "Reactions" (
+-- Create Reactions table
+CREATE TABLE IF NOT EXISTS "Reactions" (
   "id" INTEGER PRIMARY KEY AUTOINCREMENT,
   "label" varchar,
   "image_url" varchar
 );
 
-CREATE TABLE "PostReactions" (
+-- Create PostReactions table
+CREATE TABLE IF NOT EXISTS "PostReactions" (
   "id" INTEGER PRIMARY KEY AUTOINCREMENT,
   "user_id" INTEGER,
   "reaction_id" INTEGER,
@@ -73,12 +80,14 @@ CREATE TABLE "PostReactions" (
   FOREIGN KEY(`post_id`) REFERENCES `Posts`(`id`)
 );
 
-CREATE TABLE "Tags" (
+-- Create Tags table
+CREATE TABLE IF NOT EXISTS "Tags" (
   "id" INTEGER PRIMARY KEY AUTOINCREMENT,
   "label" varchar
 );
 
-CREATE TABLE "PostTags" (
+-- Create PostTags table
+CREATE TABLE IF NOT EXISTS "PostTags" (
   "id" INTEGER PRIMARY KEY AUTOINCREMENT,
   "post_id" INTEGER,
   "tag_id" INTEGER,
@@ -86,16 +95,16 @@ CREATE TABLE "PostTags" (
   FOREIGN KEY(`tag_id`) REFERENCES `Tags`(`id`)
 );
 
-CREATE TABLE "Categories" (
+-- Create Categories table
+CREATE TABLE IF NOT EXISTS "Categories" (
   "id" INTEGER PRIMARY KEY AUTOINCREMENT,
   "label" varchar
 );
 
-ALTER TABLE Comments ADD COLUMN created_on DATE;
-
-INSERT INTO Categories ('label') VALUES ('News');
-INSERT INTO Tags ('label') VALUES ('JavaScript');
-INSERT INTO Reactions (label, image_url) VALUES
+-- Seed starter data
+INSERT INTO Categories ("label") VALUES ('News');
+INSERT INTO Tags ("label") VALUES ('JavaScript');
+INSERT INTO Reactions ("label", "image_url") VALUES
   ('like', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f44d.png'),
   ('laugh', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f602.png'),
   ('fire', 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f525.png'),
@@ -124,6 +133,7 @@ INSERT INTO Users (
   'John', 'Doe', 'john.doe@email.com', 'Sample bio', 'johndoe', 'password123', 'http://example.com/image.jpg', '2025-06-16', 1
 );
 
+-- Add more categories
 INSERT INTO Categories ("label") VALUES
   ('Science'),
   ('Technology'),
@@ -145,4 +155,3 @@ INSERT INTO Categories ("label") VALUES
   ('Movies'),
   ('Gaming'),
   ('DIY');
-  

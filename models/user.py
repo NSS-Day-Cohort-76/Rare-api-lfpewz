@@ -26,7 +26,7 @@ def login_user(user):
 
         db_cursor.execute(
             """
-            SELECT id, isStaff
+            SELECT id, is_staff
             FROM Users
             WHERE username = ? AND password = ?
             """,
@@ -37,12 +37,12 @@ def login_user(user):
 
         if user_from_db:
             user_id = user_from_db["id"]
-            is_staff = bool(user_from_db["isStaff"])
+            is_staff = bool(user_from_db["is_staff"])
             return {
                 "valid": True,
                 "user_id": user_id,
                 "is_staff": is_staff,
-                "token": f"rare_token_user_{user_id}",
+                "token": str(user_id),
             }
 
         return {"valid": False}
@@ -91,7 +91,7 @@ def create_user(user):
                 bio,
                 created_on,
                 active,
-                isStaff
+                is_staff
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, 1, 1)
             """,
@@ -121,9 +121,9 @@ def get_all_users():
                 username AS display_name, 
                 first_name, 
                 last_name, 
-                isStaff
+                is_staff
             FROM Users
-        """
+            """
         )
 
         rows = db_cursor.fetchall()
@@ -134,7 +134,7 @@ def get_all_users():
                 "display_name": row["display_name"],
                 "first_name": row["first_name"],
                 "last_name": row["last_name"],
-                "is_staff": bool(row["isStaff"]),
+                "is_staff": bool(row["is_staff"]),
             }
             for row in rows
         ]
