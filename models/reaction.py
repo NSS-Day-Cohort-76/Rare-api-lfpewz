@@ -10,5 +10,5 @@ def get_all_reactions():
         for row in dataset:
             reactions.append({"id": row["id"],
                               "label": row["label"],
-                              "image": row["image_url"]})
+                              "image_url": row["image_url"]})
         return reactions

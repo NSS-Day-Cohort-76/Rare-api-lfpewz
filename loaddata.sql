@@ -155,3 +155,12 @@ INSERT INTO Categories ("label") VALUES
   ('Movies'),
   ('Gaming'),
   ('DIY');
+
+
+ALTER TABLE Users RENAME COLUMN isStaff TO is_staff;
+
+ALTER TABLE Users ADD COLUMN is_staff INTEGER;
+
+UPDATE Users SET is_staff = 1;
+
+ALTER TABLE Users ALTER COLUMN is_staff SET DEFAULT 1;
