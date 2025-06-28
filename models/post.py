@@ -187,6 +187,7 @@ def get_most_recent_post():
             FROM Posts p
             JOIN Users u ON p.user_id = u.id
             JOIN Categories c ON p.category_id = c.id
+            WHERE p.approved = 1
             ORDER BY p.publication_date DESC
             LIMIT 1
             """

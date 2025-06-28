@@ -164,3 +164,7 @@ ALTER TABLE Users ADD COLUMN is_staff INTEGER;
 UPDATE Users SET is_staff = 1;
 
 ALTER TABLE Users ALTER COLUMN is_staff SET DEFAULT 1;
+
+
+UPDATE Posts
+SET approved = 1;
